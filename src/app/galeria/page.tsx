@@ -30,6 +30,7 @@ export default function GaleriaPage() {
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'grid' | 'split'>('grid');
   const [isBeforeAfter, setIsBeforeAfter] = useState(false);
+  const [minimapZoom, setMinimapZoom] = useState(15);
 
   useEffect(() => {
     fetchPhotos();
@@ -128,38 +129,74 @@ export default function GaleriaPage() {
 
               {/* Lightweight Interactive Tile Canvas with PRAD Pins */}
               <div className="flex-1 relative w-full bg-[#EAECE9] overflow-hidden flex flex-col justify-between p-4">
-                {/* Background Map Tiles */}
+                {/* Background Map Tiles with Dynamic Zoom Scaling */}
                 <div
-                  className="absolute inset-0 bg-cover bg-center opacity-85"
+                  className="absolute inset-0 bg-cover bg-center transition-all duration-300 opacity-85"
                   style={{
                     backgroundImage: `url('https://a.basemaps.cartocdn.com/rastertiles/voyager/13/2642/3794.png')`,
+                    transform: `scale(${1 + (minimapZoom - 15) * 0.18})`,
                   }}
                 />
 
+                {/* Floating Minimap Zoom Controls (+ / -) */}
+                <div className="absolute bottom-16 right-4 z-20 flex flex-col bg-white rounded-xl shadow-lg border border-[#DDE4DE] overflow-hidden text-[#17211B] divide-y divide-[#DDE4DE]">
+                  <button
+                    onClick={() => setMinimapZoom((prev) => Math.min(prev + 1, 19))}
+                    className="p-2 hover:bg-slate-50 transition-colors font-bold text-sm cursor-pointer flex items-center justify-center w-8 h-8 select-none"
+                    title="Aumentar Zoom (+)"
+                  >
+                    +
+                  </button>
+                  <button
+                    onClick={() => setMinimapZoom((prev) => Math.max(prev - 1, 10))}
+                    className="p-2 hover:bg-slate-50 transition-colors font-bold text-sm cursor-pointer flex items-center justify-center w-8 h-8 select-none"
+                    title="Diminuir Zoom (-)"
+                  >
+                    -
+                  </button>
+                </div>
+
                 {/* Overlaid PRAD Vector Pins */}
                 <div className="relative z-10 space-y-2">
-                  <div className="bg-white/90 backdrop-blur-md p-3 rounded-xl border border-[#DDE4DE] shadow-md space-y-1">
+                  <div className="bg-white/95 backdrop-blur-md p-3 rounded-xl border border-[#DDE4DE] shadow-md space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] uppercase tracking-wider font-bold text-[#365314]">Área Selecionada</span>
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[9px] font-bold">Georreferenciada</span>
+                      <span className="text-[10px] uppercase tracking-wider font-bold text-[#365314]">Evidência Selecionada</span>
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[9px] font-bold">Zoom {minimapZoom}x</span>
                     </div>
-                    <strong className="text-xs text-[#17211B] font-bold block">
-                      {selectedPhoto ? selectedPhoto.local : 'PRAD-01 - Bota-fora 01 (Umburanas 11)'}
-                    </strong>
-                    <div className="flex items-center justify-between text-[11px] text-[#5F6D65] font-mono pt-1 border-t border-slate-200">
-                      <span>UTM E: {selectedPhoto?.easting || '227.972'} m</span>
-                      <span>N: {selectedPhoto?.northing || '8.828.658'} m</span>
-                    </div>
+
+                    {/* Active Selected Photo Preview Card */}
+                    {selectedPhoto ? (
+                      <div className="flex items-center gap-3 bg-[#F5F7F4] p-2 rounded-lg border border-[#DDE4DE]">
+                        <img
+                          src={selectedPhoto.storage_path}
+                          alt={selectedPhoto.file_name}
+                          className="w-14 h-12 rounded-md object-cover border border-[#DDE4DE] flex-shrink-0"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <strong className="text-xs text-[#17211B] font-bold block truncate">{selectedPhoto.local}</strong>
+                          <span className="text-[10px] text-[#00A651] font-semibold block truncate">{selectedPhoto.activity}</span>
+                          <span className="text-[9px] text-[#5F6D65] font-mono block">E {selectedPhoto.easting || '227.972'} | N {selectedPhoto.northing || '8.828.658'}</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <strong className="text-xs text-[#17211B] font-bold block">
+                        Clique em qualquer foto da lista ao lado para destacar no mapa
+                      </strong>
+                    )}
                   </div>
                 </div>
 
                 {/* Central Photo Pin Marker */}
                 <div className="relative z-10 my-auto flex flex-col items-center justify-center animate-bounce">
-                  <div className="bg-[#365314] text-white p-2 rounded-2xl shadow-xl border-2 border-white flex items-center gap-1.5 font-bold text-xs">
-                    <Camera className="w-4 h-4 text-emerald-400" />
-                    <span>{selectedPhoto ? selectedPhoto.file_name : 'Foto de Campo #1'}</span>
+                  <div className="bg-[#365314] text-white p-2 rounded-2xl shadow-xl border-2 border-white flex items-center gap-2 font-bold text-xs max-w-[240px]">
+                    {selectedPhoto?.storage_path ? (
+                      <img src={selectedPhoto.storage_path} alt="Thumb" className="w-6 h-6 rounded-full object-cover border border-white flex-shrink-0" />
+                    ) : (
+                      <Camera className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                    )}
+                    <span className="truncate">{selectedPhoto ? selectedPhoto.file_name : 'Foto de Campo'}</span>
                   </div>
-                  <div className="w-3 h-3 bg-[#365314] rotate-45 -mt-1.5 border-r-2 border-b-2 border-white" />
+                  <div className="w-3.5 h-3.5 bg-[#365314] rotate-45 -mt-1.5 border-r-2 border-b-2 border-white" />
                 </div>
 
                 {/* Bottom Direct Link Action Button */}
