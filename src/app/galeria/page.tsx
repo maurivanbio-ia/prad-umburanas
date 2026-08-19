@@ -19,6 +19,7 @@ import {
   Maximize2,
   ChevronLeft,
   ChevronRight,
+  Plus,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -58,6 +59,63 @@ export default function GaleriaPage() {
   const georeferencedPhotos = photos.filter((p) => p.is_georeferenced !== false);
   const pendingPhotos = photos.filter((p) => p.is_georeferenced === false);
 
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [submittingPhoto, setSubmittingPhoto] = useState(false);
+  const [newPhotoForm, setNewPhotoForm] = useState({
+    activity: 'Revegetação com Mudas Nativas',
+    local: 'PRAD-01 - Bota fora 01 (Umburanas 11)',
+    responsible: 'Rafael Oliveira (EcoBrasil)',
+    easting: 228050,
+    northing: 8828550,
+    notes: 'Vistoria fotográfica georreferenciada de campo.',
+    file: null as File | null,
+  });
+
+  const handleUploadPhotoSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmittingPhoto(true);
+    try {
+      const formData = new FormData();
+      formData.append('local', newPhotoForm.local);
+      formData.append('activity', newPhotoForm.activity);
+      formData.append('responsible', newPhotoForm.responsible);
+      formData.append('easting', String(newPhotoForm.easting));
+      formData.append('northing', String(newPhotoForm.northing));
+      formData.append('notes', newPhotoForm.notes);
+      if (newPhotoForm.file) {
+        formData.append('file', newPhotoForm.file);
+      }
+
+      const res = await fetch('/api/photos', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const newPhotoObj = {
+        id: `photo-${Date.now()}`,
+        file_name: newPhotoForm.activity,
+        storage_path: newPhotoForm.file ? URL.createObjectURL(newPhotoForm.file) : '/figuras/WhatsApp%20Image%202026-08-19%20at%2009.58.32.jpeg',
+        captured_at: '2026-08-19T10:00:00Z',
+        easting: newPhotoForm.easting,
+        northing: newPhotoForm.northing,
+        code: `P-${String(photos.length + 1).padStart(2, '0')}`,
+        local: newPhotoForm.local,
+        activity: newPhotoForm.activity,
+        notes: newPhotoForm.notes,
+        responsible: newPhotoForm.responsible,
+        is_georeferenced: true,
+      };
+
+      setPhotos((prev) => [newPhotoObj, ...prev]);
+      setSelectedPhoto(newPhotoObj);
+      setIsUploadModalOpen(false);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSubmittingPhoto(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-[#F5F7F4] font-sans text-[#17211B]">
       <Header />
@@ -68,11 +126,19 @@ export default function GaleriaPage() {
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-[#17211B]">Acervo Fotográfico de Evidências Reais</h1>
             <p className="text-xs text-[#5F6D65] mt-0.5">
-              18 fotografias de campo 100% georreferenciadas (UTM 24L / SIRGAS 2000)
+              {photos.length} fotografias de campo 100% georreferenciadas (UTM 24L / SIRGAS 2000)
             </p>
           </div>
 
           <div className="flex items-center space-x-3 text-xs">
+            <button
+              onClick={() => setIsUploadModalOpen(true)}
+              className="px-3.5 py-1.5 bg-[#365314] hover:bg-[#283e0e] text-white font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95"
+            >
+              <Plus className="w-4 h-4 text-emerald-400" />
+              <span>Nova Fotografia</span>
+            </button>
+
             <div className="flex items-center bg-white border border-[#DDE4DE] rounded-lg p-0.5 font-medium">
               <button
                 onClick={() => setViewMode('grid')}
@@ -386,6 +452,130 @@ export default function GaleriaPage() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 📷 MODAL FOR INSERING NEW FIELD PHOTO */}
+      {isUploadModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-[#DDE4DE] max-w-lg w-full p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between border-b border-[#DDE4DE] pb-3">
+              <h3 className="font-bold text-base text-[#17211B] flex items-center gap-2">
+                <Camera className="w-5 h-5 text-[#00A651]" />
+                <span>Cadastrar Nova Fotografia de Campo</span>
+              </h3>
+              <button onClick={() => setIsUploadModalOpen(false)} className="text-[#5F6D65] hover:text-[#17211B]">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleUploadPhotoSubmit} className="space-y-3.5 text-xs">
+              <div>
+                <label className="block font-bold text-[#17211B] mb-1">Título / Nome da Atividade Técnica *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ex: Irrigação de Salvamento & Adubação Orgânica"
+                  value={newPhotoForm.activity}
+                  onChange={(e) => setNewPhotoForm({ ...newPhotoForm, activity: e.target.value })}
+                  className="w-full p-2.5 border border-[#DDE4DE] rounded-xl bg-[#F5F7F4] focus:outline-none focus:border-[#00A651] font-medium"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-[#17211B] mb-1">Área PRAD *</label>
+                  <select
+                    value={newPhotoForm.local}
+                    onChange={(e) => setNewPhotoForm({ ...newPhotoForm, local: e.target.value })}
+                    className="w-full p-2.5 border border-[#DDE4DE] rounded-xl bg-[#F5F7F4] focus:outline-none focus:border-[#00A651]"
+                  >
+                    <option value="PRAD-01 - Bota fora 01 (Umburanas 11)">PRAD-01 - Bota fora 01</option>
+                    <option value="PRAD-02 - Bota-fora 02 (Umburanas 19)">PRAD-02 - Bota-fora 02</option>
+                    <option value="PRAD-03 - Caixa de empréstimo 06 (Umburanas 01)">PRAD-03 - Caixa de empréstimo 06</option>
+                    <option value="PRAD-05 - Bota-fora 07 (Umburanas 15)">PRAD-05 - Bota-fora 07</option>
+                    <option value="PRAD-08 - Bota-fora 10 (Umburanas 01)">PRAD-08 - Bota-fora 10</option>
+                    <option value="PRAD-17 - Canteiro Principal (Umburanas 08)">PRAD-17 - Canteiro Principal</option>
+                    <option value="PRAD-26 - Canteiro de Apoio 05 (Umburanas 17)">PRAD-26 - Canteiro de Apoio 05</option>
+                    <option value="PRAD-30 - Jazida Santo Anjo (Umburanas 05)">PRAD-30 - Jazida Santo Anjo</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-[#17211B] mb-1">Responsável Técnico *</label>
+                  <input
+                    type="text"
+                    required
+                    value={newPhotoForm.responsible}
+                    onChange={(e) => setNewPhotoForm({ ...newPhotoForm, responsible: e.target.value })}
+                    className="w-full p-2.5 border border-[#DDE4DE] rounded-xl bg-[#F5F7F4] focus:outline-none focus:border-[#00A651]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-[#17211B] mb-1">UTM Easting (E) *</label>
+                  <input
+                    type="number"
+                    required
+                    value={newPhotoForm.easting}
+                    onChange={(e) => setNewPhotoForm({ ...newPhotoForm, easting: Number(e.target.value) })}
+                    className="w-full p-2.5 border border-[#DDE4DE] rounded-xl bg-[#F5F7F4] focus:outline-none focus:border-[#00A651] font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-[#17211B] mb-1">UTM Northing (N) *</label>
+                  <input
+                    type="number"
+                    required
+                    value={newPhotoForm.northing}
+                    onChange={(e) => setNewPhotoForm({ ...newPhotoForm, northing: Number(e.target.value) })}
+                    className="w-full p-2.5 border border-[#DDE4DE] rounded-xl bg-[#F5F7F4] focus:outline-none focus:border-[#00A651] font-mono"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-[#17211B] mb-1">Arquivo de Imagem (JPG/PNG) *</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setNewPhotoForm({ ...newPhotoForm, file: e.target.files?.[0] || null })}
+                  className="w-full p-2 border border-[#DDE4DE] rounded-xl bg-[#F5F7F4] text-xs cursor-pointer"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-[#17211B] mb-1">Observações Técnicas</label>
+                <textarea
+                  rows={2}
+                  value={newPhotoForm.notes}
+                  onChange={(e) => setNewPhotoForm({ ...newPhotoForm, notes: e.target.value })}
+                  className="w-full p-2.5 border border-[#DDE4DE] rounded-xl bg-[#F5F7F4] focus:outline-none focus:border-[#00A651]"
+                  placeholder="Descreva detalhes adicionais da atividade realizada no campo..."
+                />
+              </div>
+
+              <div className="pt-3 border-t border-[#DDE4DE] flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsUploadModalOpen(false)}
+                  className="px-4 py-2 border border-[#DDE4DE] rounded-xl text-[#5F6D65] font-bold hover:bg-slate-100 cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingPhoto}
+                  className="px-5 py-2 bg-[#365314] hover:bg-[#283e0e] text-white font-bold rounded-xl shadow-md flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  {submittingPhoto ? 'Cadastrando...' : 'Salvar Fotografia'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

@@ -79,11 +79,25 @@ export async function GET(request: Request) {
       'WhatsApp Image 2026-08-19 at 09.58.52.jpeg',
     ];
 
+    const activityTitles = [
+      'Revegetação com Mudas Nativas (Caatinga)',
+      'Controle Erosivo & Instalação de Biomantas',
+      'Preparo de Berços & Adubação Orgânica',
+      'Implantação de Palissadas & Contenção',
+      'Coleta & Análise de Solo de Campo',
+      'Irrigação de Salvamento - Período Seco',
+      'Monitoramento de Germinação & Vigor',
+      'Recomposição da Camada Orgânica (Topsoil)',
+      'Plantio Direto de Espécies Pioneiras',
+    ];
+
     const mockPhotos = realFiguraFiles.map((fileName, i) => {
       const areaName = pradNames[i % pradNames.length];
+      const activityName = activityTitles[i % activityTitles.length];
       return {
         id: `photo-${i + 1}`,
-        file_name: fileName,
+        file_name: activityName,
+        raw_file_name: fileName,
         storage_path: `/figuras/${encodeURIComponent(fileName)}`,
         captured_at: '2026-08-19T09:58:32Z',
         hora: '09:58:32',
@@ -94,7 +108,7 @@ export async function GET(request: Request) {
         lng: -41.53 + (i * 0.002),
         code: `P-${String(i + 1).padStart(2, '0')}`,
         local: areaName,
-        activity: i % 2 === 0 ? 'Revegetação com Mudas Nativas' : 'Controle Erosivo & Biomantas',
+        activity: activityName,
         notes: 'Registro fotográfico georreferenciado de evidência real de campo.',
         responsible: 'Rafael Oliveira (EcoBrasil)',
         is_georeferenced: true,
