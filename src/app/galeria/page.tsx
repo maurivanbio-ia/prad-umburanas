@@ -222,24 +222,45 @@ export default function GaleriaPage() {
                 </div>
 
                 {/* Basemap Layer Selector Buttons (Satélite, Vetorial, Terreno) */}
-                <div className="flex items-center bg-[#243329] p-0.5 rounded-lg border border-[#3A4D40] text-[10px] font-bold">
+                <div className="flex items-center bg-[#243329] p-0.5 rounded-lg border border-[#3A4D40] text-[10px] font-bold gap-0.5">
+                  {/* Satélite */}
                   <button
                     onClick={() => setBasemapType('satellite')}
-                    className={`px-2 py-1 rounded transition-all cursor-pointer ${basemapType === 'satellite' ? 'bg-[#00A651] text-white shadow-xs' : 'text-slate-300 hover:text-white'}`}
+                    className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-md transition-all cursor-pointer min-w-[60px] ${basemapType === 'satellite' ? 'bg-[#00A651] text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-white/10'}`}
+                    title="Satélite"
                   >
-                    🛰️ Satélite
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="2"/>
+                      <path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"/>
+                    </svg>
+                    <span>Satélite</span>
                   </button>
+
+                  {/* Vetorial */}
                   <button
                     onClick={() => setBasemapType('vector')}
-                    className={`px-2 py-1 rounded transition-all cursor-pointer ${basemapType === 'vector' ? 'bg-[#00A651] text-white shadow-xs' : 'text-slate-300 hover:text-white'}`}
+                    className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-md transition-all cursor-pointer min-w-[60px] ${basemapType === 'vector' ? 'bg-[#00A651] text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-white/10'}`}
+                    title="Vetorial"
                   >
-                    🗺️ Vetorial
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M3 6l6 6 4-4 8 8"/>
+                      <path d="M21 3H3v18h18V3z" strokeOpacity="0.4"/>
+                      <path d="M3 12h18M12 3v18" strokeOpacity="0.3"/>
+                    </svg>
+                    <span>Vetorial</span>
                   </button>
+
+                  {/* Terreno */}
                   <button
                     onClick={() => setBasemapType('terrain')}
-                    className={`px-2 py-1 rounded transition-all cursor-pointer ${basemapType === 'terrain' ? 'bg-[#00A651] text-white shadow-xs' : 'text-slate-300 hover:text-white'}`}
+                    className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-md transition-all cursor-pointer min-w-[60px] ${basemapType === 'terrain' ? 'bg-[#00A651] text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-white/10'}`}
+                    title="Terreno"
                   >
-                    ⛰️ Terreno
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M3 20l5-10 4 6 3-4 6 8H3z"/>
+                      <path d="M16 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4z" fill="currentColor" strokeWidth="0"/>
+                    </svg>
+                    <span>Terreno</span>
                   </button>
                 </div>
               </div>
