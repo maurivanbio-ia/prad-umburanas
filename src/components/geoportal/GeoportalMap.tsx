@@ -684,13 +684,10 @@ export default function GeoportalMap() {
             const utmX = props.UTM_X__E_ ? Number(props.UTM_X__E_).toLocaleString('pt-BR') : (dbArea?.easting ? String(dbArea.easting) : '227.972');
             const utmY = props.UTM_Y__N_ ? Number(props.UTM_Y__N_).toLocaleString('pt-BR') : (dbArea?.northing ? String(dbArea.northing) : '8.828.658');
 
-            // Find matching real field photos for this PRAD area
-            const matchedPhotos = geoData.photosGeoJSON?.features?.filter(
-              (pf: any) =>
-                pf.properties?.local?.includes(pradCode) ||
-                pf.properties?.local?.includes(`Gleba ${glebaNum}`) ||
-                pf.properties?.pradCode === pradCode
-            ).map((pf: any) => pf.properties) || [];
+            // Find matching real field photos for this PRAD area (exact pradCode match only)
+            const matchedPhotos = (geoData.photosGeoJSON?.features || []).filter(
+              (pf: any) => pf.properties?.pradCode === pradCode
+            ).map((pf: any) => pf.properties);
 
             const pradPhotosList = matchedPhotos; // only real matches — never fall back to all photos
             const firstPhoto = pradPhotosList.length > 0 ? pradPhotosList[0] : null;

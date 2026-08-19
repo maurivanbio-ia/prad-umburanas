@@ -99,7 +99,7 @@ export async function GET() {
         },
       }));
 
-    let finalPhotoFeatures: any[] = photoFeatures;
+    let finalPhotoFeatures: any[] = []; // Always use hardcoded Excel data below (correct pradCode per photo)
     let finalAreaFeatures: any[] = areaFeatures;
 
     if (finalAreaFeatures.length === 0) {
