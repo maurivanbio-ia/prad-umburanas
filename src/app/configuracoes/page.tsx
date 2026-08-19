@@ -98,24 +98,28 @@ export default function ConfiguracoesPage() {
 
             <div className="space-y-2 text-xs text-slate-700">
               <div className="flex justify-between p-2 bg-slate-50 rounded border">
-                <span>Motor do Banco:</span>
-                <span className="font-bold text-emerald-700">PostgreSQL 16 + PostGIS 3.4</span>
+                <span>Total de Áreas PRAD:</span>
+                <span className="font-bold text-slate-900">38 Áreas (50,26 ha)</span>
               </div>
               <div className="flex justify-between p-2 bg-slate-50 rounded border">
-                <span>Container Docker:</span>
-                <span className="font-mono font-bold text-slate-900">prad-postgis:5435</span>
-              </div>
-              <div className="flex justify-between p-2 bg-slate-50 rounded border">
-                <span>Total de Áreas no Banco:</span>
-                <span className="font-bold text-slate-900">38 Registros</span>
+                <span>Canteiro Principal:</span>
+                <span className="font-bold text-emerald-700">3,46 ha (100% Concluído)</span>
               </div>
               <div className="flex justify-between p-2 bg-slate-50 rounded border">
                 <span>Fotografias de Campo:</span>
-                <span className="font-bold text-slate-900">18 Arquivos Indexados</span>
+                <span className="font-bold text-slate-900">16 Registros Georreferenciados</span>
               </div>
               <div className="flex justify-between p-2 bg-slate-50 rounded border">
-                <span>Camadas Vetoriais SHP:</span>
-                <span className="font-bold text-slate-900">6 Camadas GeoJSON</span>
+                <span>Data-Base do Contrato:</span>
+                <span className="font-mono font-bold text-slate-900">05/08/2026</span>
+              </div>
+              <div className="flex justify-between p-2 bg-slate-50 rounded border">
+                <span>Término Contratual Previsto:</span>
+                <span className="font-mono font-bold text-emerald-700">31/08/2026 (25 dias)</span>
+              </div>
+              <div className="flex justify-between p-2 bg-slate-50 rounded border">
+                <span>Periodicidade de Medição:</span>
+                <span className="font-bold text-slate-900">Quinzenal (15 dias)</span>
               </div>
             </div>
           </div>

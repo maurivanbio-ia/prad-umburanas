@@ -1,29 +1,30 @@
 import { NextResponse } from 'next/server';
 import { pool } from '@/database/db';
+import { EXCEL_SCHEDULE_ITEMS } from '@/data/excelData';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  const client = await pool.connect();
+  let client;
   try {
+    client = await pool.connect();
     const res = await client.query('SELECT * FROM schedule_items ORDER BY code ASC');
-    return NextResponse.json({ success: true, items: res.rows });
+    if (res.rows.length > 0) {
+      return NextResponse.json({ success: true, items: res.rows });
+    }
   } catch (error: any) {
-    console.error('API Schedule error, returning fallback JSON:', error?.message);
-    const mockItems = [
-      { id: 'sched-1', code: 'SC-01', activity: 'Vistoria Técnica de Monitoramento PRAD-17', start_date: '2026-08-18', planned_end_date: '2026-08-19', status: 'Concluído', responsible: 'Rafael Oliveira', notes: 'Taxa de cobertura vegetal: 65%' },
-      { id: 'sched-2', code: 'SC-02', activity: 'Adubação e Irrigação de Salvamento - Gleba 03', start_date: '2026-08-20', planned_end_date: '2026-08-25', status: 'Em andamento', responsible: 'Equipe de Campo', notes: 'Manutenção nutricional' },
-      { id: 'sched-3', code: 'SC-03', activity: 'Instalação de Leiras e Biomantas - Jazida Santo Anjo', start_date: '2026-08-28', planned_end_date: '2026-09-05', status: 'Planejado', responsible: 'Empreiteira', notes: 'Controle erosivo taludes' },
-    ];
-    return NextResponse.json({ success: true, items: mockItems });
+    // DB query failed, fallback to Excel schedule
   } finally {
-    try { client.release(); } catch (e) {}
+    try { if (client) client.release(); } catch (e) {}
   }
+
+  return NextResponse.json({ success: true, items: EXCEL_SCHEDULE_ITEMS });
 }
 
 export async function PUT(request: Request) {
-  const client = await pool.connect();
+  let client;
   try {
+    client = await pool.connect();
     const body = await request.json();
     const { id, activity, planned_start, planned_end, real_end, new_date, status, notes } = body;
 
@@ -44,6 +45,6 @@ export async function PUT(request: Request) {
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   } finally {
-    client.release();
+    try { if (client) client.release(); } catch (e) {}
   }
 }

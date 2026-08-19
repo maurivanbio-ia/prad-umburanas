@@ -21,6 +21,7 @@ import {
   MoreVertical,
 } from 'lucide-react';
 import * as xlsx from 'xlsx';
+import { EXCEL_38_AREAS } from '@/data/excelData';
 
 export default function AreasPage() {
   const [areas, setAreas] = useState<any[]>([]);
@@ -50,45 +51,13 @@ export default function AreasPage() {
         setAreas(data.areas);
         setSelectedArea(data.areas[0]);
       } else {
-        const mockAreas = Array.from({ length: 38 }, (_, i) => ({
-          id: `area-${i + 1}`,
-          number: i + 1,
-          name: i % 4 === 0 ? `Bota-fora ${i + 1}` : i % 4 === 1 ? `Caixa de empréstimo ${i + 1}` : i % 4 === 2 ? `Jazida Santo Anjo ${i + 1}` : `Canteiro de apoio ${i + 1}`,
-          wind_complex: `Umburanas ${String((i % 18) + 1).padStart(2, '0')}`,
-          area_ha: Math.round((0.8 + (i * 0.23) % 4.5) * 100) / 100,
-          action_type: i % 3 === 0 ? 'Reforma da gleba' : i % 3 === 1 ? 'Manutenção média' : 'Manutenção básica',
-          soil_collection_status: i % 2 === 0 ? 'Concluído' : 'Em andamento',
-          maintenance_status: 'Concluído',
-          irrigation_status: 'Em andamento',
-          status: i % 3 === 0 ? 'Concluído' : 'Em andamento',
-          responsible: 'Equipe Ambiental',
-          notes: 'Área sob monitoramento de revegetação e bioengenharia.',
-          lat: -10.63 + (i * 0.002),
-          lng: -41.53 + (i * 0.002),
-        }));
-        setAreas(mockAreas);
-        setSelectedArea(mockAreas[0]);
+        setAreas(EXCEL_38_AREAS);
+        setSelectedArea(EXCEL_38_AREAS[0]);
       }
     } catch (err) {
       console.error('Failed to fetch areas:', err);
-      const mockAreas = Array.from({ length: 38 }, (_, i) => ({
-        id: `area-${i + 1}`,
-        number: i + 1,
-        name: i % 4 === 0 ? `Bota-fora ${i + 1}` : i % 4 === 1 ? `Caixa de empréstimo ${i + 1}` : i % 4 === 2 ? `Jazida Santo Anjo ${i + 1}` : `Canteiro de apoio ${i + 1}`,
-        wind_complex: `Umburanas ${String((i % 18) + 1).padStart(2, '0')}`,
-        area_ha: Math.round((0.8 + (i * 0.23) % 4.5) * 100) / 100,
-        action_type: i % 3 === 0 ? 'Reforma da gleba' : i % 3 === 1 ? 'Manutenção média' : 'Manutenção básica',
-        soil_collection_status: i % 2 === 0 ? 'Concluído' : 'Em andamento',
-        maintenance_status: 'Concluído',
-        irrigation_status: 'Em andamento',
-        status: i % 3 === 0 ? 'Concluído' : 'Em andamento',
-        responsible: 'Equipe Ambiental',
-        notes: 'Área sob monitoramento de revegetação e bioengenharia.',
-        lat: -10.63 + (i * 0.002),
-        lng: -41.53 + (i * 0.002),
-      }));
-      setAreas(mockAreas);
-      setSelectedArea(mockAreas[0]);
+      setAreas(EXCEL_38_AREAS);
+      setSelectedArea(EXCEL_38_AREAS[0]);
     } finally {
       setLoading(false);
     }
