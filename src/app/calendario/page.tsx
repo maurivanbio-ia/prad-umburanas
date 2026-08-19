@@ -22,12 +22,34 @@ export default function CalendarioPage() {
   const currentDay = 19; // 19 de Agosto de 2026
 
   const [events, setEvents] = useState<Record<number, any[]>>({
-    12: [{ title: 'Amostragem Solo', type: 'Concluído', color: 'bg-emerald-50 text-[#1B8A5A] border-emerald-200' }],
-    19: [
-      { title: 'Vistoria de Campo PRAD-17', type: 'Em andamento', color: 'bg-amber-50 text-[#C88B10] border-amber-200' },
-      { title: 'Irrigação Canteiro', type: 'Em andamento', color: 'bg-blue-50 text-[#00A3E0] border-blue-200' },
+    5: [
+      { title: 'Coleta de Solo • PRAD-17 (Canteiro Central)', type: 'Concluído', color: 'bg-emerald-50 text-[#1B8A5A] border-emerald-200', local: 'PRAD-17 - Canteiro Central', time: '14:44' },
     ],
-    25: [{ title: 'Fechamento Quinzena', type: 'Planejada', color: 'bg-[#F5F7F4] text-[#5F6D65] border-[#DDE4DE]' }],
+    6: [
+      { title: 'Coleta de Solo • PRAD-30 (Jazida Santo Anjo)', type: 'Concluído', color: 'bg-emerald-50 text-[#1B8A5A] border-emerald-200', local: 'PRAD-30 - Jazida Santo Anjo', time: '15:04' },
+      { title: 'Coleta de Solo • PRAD-33 (Jazida do Alegre)', type: 'Concluído', color: 'bg-emerald-50 text-[#1B8A5A] border-emerald-200', local: 'PRAD-33 - Jazida do Alegre', time: '09:55' },
+      { title: 'Coleta de Solo • PRAD-25 (Bota-fora 25)', type: 'Concluído', color: 'bg-emerald-50 text-[#1B8A5A] border-emerald-200', local: 'PRAD-25 - Bota-fora 25', time: '10:29' },
+      { title: 'Coleta de Solo • PRAD-27 (Bota-fora 27)', type: 'Concluído', color: 'bg-emerald-50 text-[#1B8A5A] border-emerald-200', local: 'PRAD-27 - Bota-fora 27', time: '11:31' },
+    ],
+    11: [
+      { title: 'Limpeza de Solo • PRAD-17 (Canteiro Central)', type: 'Concluído', color: 'bg-emerald-50 text-[#1B8A5A] border-emerald-200', local: 'PRAD-17 - Canteiro Central', time: '10:48' },
+    ],
+    13: [
+      { title: 'Limpeza de Solo • PRAD-17 (Canteiro Central)', type: 'Concluído', color: 'bg-emerald-50 text-[#1B8A5A] border-emerald-200', local: 'PRAD-17 - Canteiro Central', time: '15:16' },
+    ],
+    17: [
+      { title: 'Limpeza & Preparo • PRAD-17 (Canteiro Central)', type: 'Concluído', color: 'bg-emerald-50 text-[#1B8A5A] border-emerald-200', local: 'PRAD-17 - Canteiro Central', time: '08:15' },
+    ],
+    18: [
+      { title: 'Limpeza & Preparo • PRAD-01 (Bota-fora 01)', type: 'Concluído', color: 'bg-emerald-50 text-[#1B8A5A] border-emerald-200', local: 'PRAD-01 - Bota-fora 01', time: '10:00' },
+    ],
+    19: [
+      { title: 'Vistoria de Campo PRAD-17', type: 'Em andamento', color: 'bg-amber-50 text-[#C88B10] border-amber-200', local: 'PRAD-17', time: '09:00' },
+      { title: 'Irrigação Canteiro', type: 'Em andamento', color: 'bg-blue-50 text-[#00A3E0] border-blue-200', local: 'PRAD-17', time: '11:00' },
+    ],
+    25: [
+      { title: 'Fechamento Quinzena', type: 'Planejada', color: 'bg-[#F5F7F4] text-[#5F6D65] border-[#DDE4DE]', local: 'Geral', time: '17:00' },
+    ],
   });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
