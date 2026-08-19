@@ -722,7 +722,59 @@ export default function GeoportalMap() {
           mapInstance.on('mouseleave', 'areas-circle', () => { mapInstance.getCanvas().style.cursor = ''; });
         }
 
-        // Photos GeoJSON is integrated directly inside PRAD Leaf Icons (areas-circle)
+        // Photos GeoJSON Layer (Camera Symbols on map)
+        if (geoData.photosGeoJSON?.features) {
+          mapInstance.addSource('photos-source', {
+            type: 'geojson',
+            data: geoData.photosGeoJSON,
+          });
+
+          mapInstance.addLayer({
+            id: 'photos-unclustered',
+            type: 'symbol',
+            source: 'photos-source',
+            layout: {
+              'icon-image': 'icon-camera',
+              'icon-size': 0.032,
+              'icon-allow-overlap': true,
+            },
+          });
+
+          mapInstance.on('click', 'photos-unclustered', (e) => {
+            if (!e.features || e.features.length === 0) return;
+            const props = e.features[0].properties;
+            const pradCode = props.pradCode || 'PRAD-17';
+            const matchedPhotos = (geoData.photosGeoJSON?.features || [])
+              .filter((pf: any) => pf.properties?.pradCode === pradCode)
+              .map((pf: any) => pf.properties);
+
+            const activeIdx = matchedPhotos.findIndex((p: any) => p.id === props.id || p.code === props.code);
+            const currentPhoto = matchedPhotos[activeIdx >= 0 ? activeIdx : 0] || props;
+
+            setMapPopup({
+              type: 'prad',
+              title: `${pradCode} - ${currentPhoto.local || 'Registro Fotográfico'}`,
+              pradCode,
+              pradName: currentPhoto.local,
+              gleba: pradCode,
+              spe: 'Umburanas',
+              surface: 'Evidência em Campo',
+              status: 'Concluído',
+              atuacao: currentPhoto.activity || 'Registro Fotográfico',
+              utmX: currentPhoto.easting ? Number(currentPhoto.easting).toLocaleString('pt-BR') : '229.273',
+              utmY: currentPhoto.northing ? Number(currentPhoto.northing).toLocaleString('pt-BR') : '8.828.407',
+              photoUrl: currentPhoto.storage_path || currentPhoto.storagePath,
+              capturedAt: currentPhoto.captured_at || currentPhoto.capturedAt || '',
+              photosList: matchedPhotos,
+              photoIndex: activeIdx >= 0 ? activeIdx : 0,
+              notes: currentPhoto.notes || `Registro fotográfico ${currentPhoto.code} georreferenciado em campo com precisão submétrica.`,
+            });
+            setSelectedTab('fotografias');
+          });
+
+          mapInstance.on('mouseenter', 'photos-unclustered', () => { mapInstance.getCanvas().style.cursor = 'pointer'; });
+          mapInstance.on('mouseleave', 'photos-unclustered', () => { mapInstance.getCanvas().style.cursor = ''; });
+        }
       } catch (err) {
         console.error('Error initializing map:', err);
       }
@@ -1336,14 +1388,10 @@ export default function GeoportalMap() {
                           className="w-full h-full object-cover"
                           onError={(e) => {
                             const target = e.currentTarget;
-                            // Try underscore-named version in /uploads/photos/ as fallback
-                            const fallback = target.src
-                              .replace('/figuras/', '/uploads/photos/')
-                              .replace(/%20/g, '_')
-                              .replace(/%28/g, '(')
-                              .replace(/%29/g, ')');
-                            if (target.src !== fallback) target.src = fallback;
-                            else target.style.display = 'none';
+                            if (!target.dataset.fallbackTried) {
+                              target.dataset.fallbackTried = 'true';
+                              target.src = '/figuras/P-16_PRAD17_limpeza_17ago2026.jpeg';
+                            }
                           }}
                         />
                       ) : (
