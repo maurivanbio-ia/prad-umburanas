@@ -29,6 +29,7 @@ export default function AreasPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [viewMode, setViewMode] = useState<'split' | 'table' | 'map'>('split');
   const [selectedArea, setSelectedArea] = useState<any | null>(null);
+  const [areaMinimapZoom, setAreaMinimapZoom] = useState(14);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 25;
 
@@ -290,12 +291,31 @@ export default function AreasPage() {
                       <img
                         src={`https://tile.openstreetmap.org/14/${Math.floor(((selectedArea.lng || -41.53) + 180) / 360 * Math.pow(2, 14))}/${Math.floor((1 - Math.log(Math.tan((selectedArea.lat || -10.63) * Math.PI / 180) + 1 / Math.cos((selectedArea.lat || -10.63) * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, 14))}.png`}
                         alt="Minimapa PRAD"
-                        className="w-full h-full object-cover filter brightness-95 contrast-105"
+                        className="w-full h-full object-cover filter brightness-95 contrast-105 transition-all duration-300"
+                        style={{ transform: `scale(${1 + (areaMinimapZoom - 14) * 0.18})` }}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-black/20 pointer-events-none" />
                       
+                      {/* Floating Minimap Zoom Controls (+ / -) */}
+                      <div className="absolute top-2 right-2 z-20 flex flex-col bg-white rounded-lg shadow-md border border-[#DDE4DE] overflow-hidden text-[#17211B] divide-y divide-[#DDE4DE]">
+                        <button
+                          onClick={() => setAreaMinimapZoom((prev) => Math.min(prev + 1, 19))}
+                          className="p-1.5 hover:bg-slate-50 transition-colors font-bold text-xs cursor-pointer flex items-center justify-center w-7 h-7 select-none"
+                          title="Aumentar Zoom (+)"
+                        >
+                          +
+                        </button>
+                        <button
+                          onClick={() => setAreaMinimapZoom((prev) => Math.max(prev - 1, 10))}
+                          className="p-1.5 hover:bg-slate-50 transition-colors font-bold text-xs cursor-pointer flex items-center justify-center w-7 h-7 select-none"
+                          title="Diminuir Zoom (-)"
+                        >
+                          -
+                        </button>
+                      </div>
+
                       {/* Centered Map Marker Badge */}
-                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
                         <div className="flex flex-col items-center animate-bounce">
                           <img src="/symbols/03_areas_prad_folha.png" alt="PRAD" className="w-8 h-8 drop-shadow-lg" />
                           <span className="bg-[#365314] text-white text-[9px] font-mono px-2 py-0.5 rounded shadow font-bold mt-0.5">
@@ -304,8 +324,12 @@ export default function AreasPage() {
                         </div>
                       </div>
 
-                      <span className="absolute bottom-2 left-2 text-[10px] font-mono text-white/90 bg-black/70 px-2 py-0.5 rounded backdrop-blur-sm">
+                      <span className="absolute bottom-2 left-2 text-[10px] font-mono text-white/90 bg-black/70 px-2 py-0.5 rounded backdrop-blur-sm z-10">
                         UTM: E {Math.round(227972 + (selectedArea.number * 120))} | N {Math.round(8828658 - (selectedArea.number * 150))}
+                      </span>
+
+                      <span className="absolute bottom-2 right-2 text-[9px] font-mono text-white/90 bg-[#365314] px-1.5 py-0.5 rounded shadow font-bold z-10">
+                        Zoom {areaMinimapZoom}x
                       </span>
                     </div>
 
