@@ -67,7 +67,7 @@ export default function GaleriaPage() {
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-[#17211B]">Acervo Fotográfico de Evidências Reais</h1>
             <p className="text-xs text-[#5F6D65] mt-0.5">
-              16 fotografias georreferenciadas (UTM 24L / SIRGAS 2000) • 2 pendentes de localização
+              18 fotografias de campo 100% georreferenciadas (UTM 24L / SIRGAS 2000)
             </p>
           </div>
 
@@ -297,36 +297,6 @@ export default function GaleriaPage() {
           </div>
         )}
 
-        {/* 2 PENDING PHOTOS SECTION */}
-        {pendingPhotos.length > 0 && (
-          <div className="space-y-3 pt-4 border-t border-[#DDE4DE]">
-            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-center space-x-2 text-xs text-amber-900 font-semibold">
-              <AlertTriangle className="w-4 h-4 text-[#C88B10]" />
-              <span>Pendentes de Geolocalização ({pendingPhotos.length}) — Vincular aos marcadores no Geoportal</span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {pendingPhotos.map((p) => (
-                <div
-                  key={p.id}
-                  onClick={() => setSelectedPhoto(p)}
-                  className="bg-white rounded-lg border border-amber-200 overflow-hidden cursor-pointer group flex flex-col"
-                >
-                  <div className="relative aspect-video bg-slate-900 overflow-hidden">
-                    <img src={p.storage_path} alt={p.file_name} className="w-full h-full object-cover" />
-                    <span className="absolute top-2 right-2 bg-amber-500 text-white text-[9px] font-mono font-bold px-1.5 py-0.5 rounded">
-                      Pendente
-                    </span>
-                  </div>
-                  <div className="p-3 text-xs space-y-1">
-                    <span className="font-bold text-[#17211B] block truncate">{p.local || 'Local Pendente'}</span>
-                    <span className="text-[#00A651] font-semibold block text-[11px]">{p.activity}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </main>
 
       {/* FULL SCREEN PHOTO VIEWER MODAL (Dark background ONLY inside modal) */}

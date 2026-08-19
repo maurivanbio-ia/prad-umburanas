@@ -36,12 +36,12 @@ export default function Header() {
   const [alertsList, setAlertsList] = useState([
     {
       id: 1,
-      title: '2 Fotografias Sem Localização',
-      desc: 'Evidências fotográficas aguardando vinculação espacial no Geoportal.',
-      tag: 'Crítico',
+      title: 'Acervo Fotográfico 100% Georreferenciado',
+      desc: '18 evidências fotográficas vinculadas diretamente aos polígonos PRAD.',
+      tag: 'Concluído',
       time: 'Há 15 min',
       link: '/galeria',
-      color: 'bg-red-500/20 text-red-300 border-red-500/30',
+      color: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
       read: false,
     },
     {
