@@ -20,6 +20,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Plus,
+  Trash2,
+  Pencil,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -76,6 +78,28 @@ export default function GaleriaPage() {
     file: null as File | null,
   });
 
+  // Edit / Delete state
+  const [editingPhoto, setEditingPhoto] = useState<any | null>(null);
+  const [editForm, setEditForm] = useState({ code: '', activity: '', local: '', notes: '', responsible: '' });
+
+  const handleDeletePhoto = (photoId: string) => {
+    if (!confirm('Tem certeza que deseja remover esta fotografia do acervo?')) return;
+    setPhotos((prev: any[]) => prev.filter((p: any) => p.id !== photoId));
+    if (selectedPhoto?.id === photoId) setSelectedPhoto(null);
+    if (activeMapPhoto?.id === photoId) setActiveMapPhoto(null);
+  };
+
+  const handleOpenEdit = (p: any, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingPhoto(p);
+    setEditForm({ code: p.code || '', activity: p.activity || '', local: p.local || '', notes: p.notes || '', responsible: p.responsible || '' });
+  };
+
+  const handleSaveEdit = () => {
+    setPhotos((prev: any[]) => prev.map((p: any) => p.id === editingPhoto.id ? { ...p, ...editForm } : p));
+    setEditingPhoto(null);
+  };
+
   const handleUploadPhotoSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmittingPhoto(true);
@@ -129,7 +153,7 @@ export default function GaleriaPage() {
         {/* Title Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#DDE4DE] pb-4">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-[#17211B]">Acervo Fotográfico de Evidências Reais</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-[#17211B]">Acervo Fotográfico das Atividades</h1>
             <p className="text-xs text-[#5F6D65] mt-0.5">
               {photos.length} fotografias de campo 100% georreferenciadas (UTM 24L / SIRGAS 2000)
             </p>
@@ -456,6 +480,23 @@ export default function GaleriaPage() {
                         <span className="absolute top-2 right-2 bg-[#00A651] text-white text-[9px] font-mono font-bold px-2 py-0.5 rounded-md flex items-center gap-1 shadow">
                           <MapPin className="w-2.5 h-2.5" /> UTM 24L
                         </span>
+                        {/* Edit / Delete overlay buttons */}
+                        <div className="absolute top-2 left-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={(e) => handleOpenEdit(p, e)}
+                            className="bg-blue-600/90 hover:bg-blue-700 text-white p-1.5 rounded-md shadow cursor-pointer"
+                            title="Editar informações"
+                          >
+                            <Pencil className="w-3 h-3" />
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleDeletePhoto(p.id); }}
+                            className="bg-red-600/90 hover:bg-red-700 text-white p-1.5 rounded-md shadow cursor-pointer"
+                            title="Remover foto do acervo"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
                       </div>
 
                       <div className="p-3 text-xs flex-1 flex flex-col justify-between space-y-1.5 bg-white">
@@ -653,6 +694,88 @@ export default function GaleriaPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT PHOTO MODAL */}
+      {editingPhoto && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full border border-[#DDE4DE] shadow-2xl font-sans">
+            <div className="bg-[#17211B] text-white px-4 py-3 flex items-center justify-between rounded-t-2xl">
+              <div className="flex items-center gap-2">
+                <Pencil className="w-4 h-4 text-emerald-400" />
+                <h3 className="font-bold text-xs uppercase tracking-wider">Editar Fotografia</h3>
+              </div>
+              <button onClick={() => setEditingPhoto(null)} className="text-white/70 hover:text-white cursor-pointer">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-[#17211B] mb-1">Código da Foto</label>
+                <input
+                  type="text"
+                  value={editForm.code}
+                  onChange={(e) => setEditForm({ ...editForm, code: e.target.value })}
+                  className="w-full p-2.5 border border-[#DDE4DE] rounded-xl bg-[#F5F7F4] focus:outline-none focus:border-[#00A651] font-mono"
+                  placeholder="Ex: P-01"
+                />
+              </div>
+              <div>
+                <label className="block font-bold text-[#17211B] mb-1">Atividade</label>
+                <input
+                  type="text"
+                  value={editForm.activity}
+                  onChange={(e) => setEditForm({ ...editForm, activity: e.target.value })}
+                  className="w-full p-2.5 border border-[#DDE4DE] rounded-xl bg-[#F5F7F4] focus:outline-none focus:border-[#00A651]"
+                />
+              </div>
+              <div>
+                <label className="block font-bold text-[#17211B] mb-1">Área / Local</label>
+                <input
+                  type="text"
+                  value={editForm.local}
+                  onChange={(e) => setEditForm({ ...editForm, local: e.target.value })}
+                  className="w-full p-2.5 border border-[#DDE4DE] rounded-xl bg-[#F5F7F4] focus:outline-none focus:border-[#00A651]"
+                />
+              </div>
+              <div>
+                <label className="block font-bold text-[#17211B] mb-1">Responsável Técnico</label>
+                <input
+                  type="text"
+                  value={editForm.responsible}
+                  onChange={(e) => setEditForm({ ...editForm, responsible: e.target.value })}
+                  className="w-full p-2.5 border border-[#DDE4DE] rounded-xl bg-[#F5F7F4] focus:outline-none focus:border-[#00A651]"
+                />
+              </div>
+              <div>
+                <label className="block font-bold text-[#17211B] mb-1">Observações</label>
+                <textarea
+                  rows={2}
+                  value={editForm.notes}
+                  onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
+                  className="w-full p-2.5 border border-[#DDE4DE] rounded-xl bg-[#F5F7F4] focus:outline-none focus:border-[#00A651]"
+                />
+              </div>
+              <div className="pt-3 border-t border-[#DDE4DE] flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingPhoto(null)}
+                  className="px-4 py-2 border border-[#DDE4DE] rounded-xl text-[#5F6D65] font-bold hover:bg-slate-100 cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveEdit}
+                  className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md flex items-center gap-2 cursor-pointer"
+                >
+                  <Pencil className="w-3.5 h-3.5" /> Salvar Alterações
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

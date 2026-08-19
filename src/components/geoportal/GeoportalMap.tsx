@@ -692,9 +692,11 @@ export default function GeoportalMap() {
                 pf.properties?.pradCode === pradCode
             ).map((pf: any) => pf.properties) || [];
 
-            const pradPhotosList = matchedPhotos.length > 0 ? matchedPhotos : (geoData.photosGeoJSON?.features?.map((pf: any) => pf.properties) || []);
-            const firstPhoto = pradPhotosList[(Number(glebaNum) || 1) % pradPhotosList.length];
-            const validPhotoUrl = firstPhoto?.storage_path || firstPhoto?.storagePath || (firstPhoto?.fileName ? `/figuras/${encodeURIComponent(firstPhoto.fileName)}` : '/figuras/WhatsApp%20Image%202026-08-19%20at%2009.58.32.jpeg');
+            const pradPhotosList = matchedPhotos; // only real matches — never fall back to all photos
+            const firstPhoto = pradPhotosList.length > 0 ? pradPhotosList[0] : null;
+            const validPhotoUrl = firstPhoto
+              ? (firstPhoto.storage_path || firstPhoto.storagePath || (firstPhoto.fileName ? `/figuras/${encodeURIComponent(firstPhoto.fileName)}` : null))
+              : null;
 
             setMapPopup({
               type: 'prad',
@@ -709,9 +711,9 @@ export default function GeoportalMap() {
               utmX,
               utmY,
               photoUrl: validPhotoUrl,
-              capturedAt: firstPhoto?.captured_at || firstPhoto?.capturedAt ? new Date(firstPhoto.captured_at || firstPhoto.capturedAt).toLocaleDateString('pt-BR') : '19/08/2026',
+              capturedAt: firstPhoto?.captured_at || firstPhoto?.capturedAt ? new Date(firstPhoto.captured_at || firstPhoto.capturedAt).toLocaleDateString('pt-BR') : '',
               photosList: pradPhotosList,
-              photoIndex: (Number(glebaNum) || 1) % pradPhotosList.length,
+              photoIndex: 0,
               notes: dbArea?.notes && dbArea?.notes.length > 5
                 ? dbArea.notes
                 : `Área ${pradCode} (${pradName}) pertencente à Gleba ${glebaNum} no Parque Eólico ${spe}. Intervenção técnica: ${atuacao}. Coordenadas UTM: E ${utmX} / N ${utmY}.`,
@@ -1222,15 +1224,6 @@ export default function GeoportalMap() {
             {/* TAB 1: RESUMO */}
             {selectedTab === 'resumo' && (
               <div className="space-y-3">
-                {/* Photo Preview if photo exists */}
-                {mapPopup.photoUrl ? (
-                  <div className="aspect-video bg-slate-900 rounded-xl overflow-hidden border border-[#DDE4DE] relative group flex-shrink-0">
-                    <img src={mapPopup.photoUrl} alt={mapPopup.title} className="w-full h-full object-cover" />
-                    <span className="absolute bottom-1.5 right-1.5 bg-black/75 text-white text-[9px] font-mono px-1.5 py-0.5 rounded backdrop-blur-sm">
-                      {mapPopup.capturedAt}
-                    </span>
-                  </div>
-                ) : null}
 
                 {/* High Information PRAD Badge Header */}
                 <div className="bg-[#F5F7F4] p-3 rounded-xl border border-[#DDE4DE] flex items-center justify-between gap-2">
@@ -1335,72 +1328,98 @@ export default function GeoportalMap() {
             {/* TAB 3: FOTOGRAFIAS */}
             {selectedTab === 'fotografias' && (
               <div className="space-y-2.5 text-xs">
-                {mapPopup.photoUrl ? (
-                  <div className="aspect-video bg-slate-900 rounded-lg overflow-hidden border border-[#DDE4DE] relative group">
-                    <img
-                      src={mapPopup.photoUrl}
-                      alt={mapPopup.title}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        const target = e.currentTarget;
-                        if (!target.src.includes('/uploads/photos/')) {
-                          target.src = target.src.replace('/figuras/', '/uploads/photos/');
-                        } else {
-                          target.src = '/figuras/WhatsApp%20Image%202026-08-19%20at%2009.58.32.jpeg';
-                        }
-                      }}
-                    />
-                    {mapPopup.photosList && mapPopup.photosList.length > 1 && (
-                      <>
-                        <button
-                          onClick={() => {
-                            const nextIdx = (mapPopup.photoIndex - 1 + mapPopup.photosList.length) % mapPopup.photosList.length;
-                            const current = mapPopup.photosList[nextIdx];
-                            const url = current.storage_path || current.storagePath || (current.fileName || current.file_name ? `/figuras/${encodeURIComponent(current.fileName || current.file_name)}` : '/figuras/WhatsApp%20Image%202026-08-19%20at%2009.58.32.jpeg');
-                            setMapPopup({
-                              ...mapPopup,
-                              photoIndex: nextIdx,
-                              photoUrl: url,
-                              capturedAt: current.capturedAt || current.captured_at ? `${current.capturedAt || current.captured_at}`.trim() : '19/08/2026',
-                            });
+                {mapPopup.photosList && mapPopup.photosList.length > 0 ? (
+                  <>
+                    {/* Foto atual */}
+                    <div className="aspect-video bg-slate-900 rounded-lg overflow-hidden border border-[#DDE4DE] relative group">
+                      {mapPopup.photoUrl ? (
+                        <img
+                          src={mapPopup.photoUrl}
+                          alt={mapPopup.title}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            const target = e.currentTarget;
+                            // Try underscore-named version in /uploads/photos/ as fallback
+                            const fallback = target.src
+                              .replace('/figuras/', '/uploads/photos/')
+                              .replace(/%20/g, '_')
+                              .replace(/%28/g, '(')
+                              .replace(/%29/g, ')');
+                            if (target.src !== fallback) target.src = fallback;
+                            else target.style.display = 'none';
                           }}
-                          className="absolute left-1.5 top-1/2 -translate-y-1/2 bg-black/60 text-white p-1 rounded-full shadow cursor-pointer hover:bg-black/80"
-                        >
-                          <ChevronLeft className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            const nextIdx = (mapPopup.photoIndex + 1) % mapPopup.photosList.length;
-                            const current = mapPopup.photosList[nextIdx];
-                            const url = current.storage_path || current.storagePath || (current.fileName || current.file_name ? `/figuras/${encodeURIComponent(current.fileName || current.file_name)}` : '/figuras/WhatsApp%20Image%202026-08-19%20at%2009.58.32.jpeg');
-                            setMapPopup({
-                              ...mapPopup,
-                              photoIndex: nextIdx,
-                              photoUrl: url,
-                              capturedAt: current.capturedAt || current.captured_at ? `${current.capturedAt || current.captured_at}`.trim() : '19/08/2026',
-                            });
-                          }}
-                          className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-black/60 text-white p-1 rounded-full shadow cursor-pointer hover:bg-black/80"
-                        >
-                          <ChevronRight className="w-4 h-4" />
-                        </button>
-                        <span className="absolute top-1.5 left-1.5 bg-black/75 text-white text-[9px] font-mono px-1.5 py-0.5 rounded">
-                          Foto {mapPopup.photoIndex + 1} de {mapPopup.photosList.length}
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Camera className="w-8 h-8 text-slate-600" />
+                        </div>
+                      )}
+
+                      {/* Navegação entre fotos */}
+                      {mapPopup.photosList.length > 1 && (
+                        <>
+                          <button
+                            onClick={() => {
+                              const nextIdx = (mapPopup.photoIndex - 1 + mapPopup.photosList.length) % mapPopup.photosList.length;
+                              const current = mapPopup.photosList[nextIdx];
+                              const url = current.storage_path || current.storagePath || (current.fileName || current.file_name ? `/figuras/${encodeURIComponent(current.fileName || current.file_name)}` : null);
+                              setMapPopup({
+                                ...mapPopup,
+                                photoIndex: nextIdx,
+                                photoUrl: url,
+                                capturedAt: current.capturedAt || current.captured_at ? new Date(current.captured_at || current.capturedAt).toLocaleDateString('pt-BR') : '',
+                              });
+                            }}
+                            className="absolute left-1.5 top-1/2 -translate-y-1/2 bg-black/60 text-white p-1 rounded-full shadow cursor-pointer hover:bg-black/80"
+                          >
+                            <ChevronLeft className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              const nextIdx = (mapPopup.photoIndex + 1) % mapPopup.photosList.length;
+                              const current = mapPopup.photosList[nextIdx];
+                              const url = current.storage_path || current.storagePath || (current.fileName || current.file_name ? `/figuras/${encodeURIComponent(current.fileName || current.file_name)}` : null);
+                              setMapPopup({
+                                ...mapPopup,
+                                photoIndex: nextIdx,
+                                photoUrl: url,
+                                capturedAt: current.capturedAt || current.captured_at ? new Date(current.captured_at || current.capturedAt).toLocaleDateString('pt-BR') : '',
+                              });
+                            }}
+                            className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-black/60 text-white p-1 rounded-full shadow cursor-pointer hover:bg-black/80"
+                          >
+                            <ChevronRight className="w-4 h-4" />
+                          </button>
+                          <span className="absolute top-1.5 left-1.5 bg-black/75 text-white text-[9px] font-mono px-1.5 py-0.5 rounded">
+                            Foto {mapPopup.photoIndex + 1} de {mapPopup.photosList.length}
+                          </span>
+                        </>
+                      )}
+                      {mapPopup.capturedAt && (
+                        <span className="absolute bottom-1.5 right-1.5 bg-black/75 text-white text-[9px] font-mono px-1.5 py-0.5 rounded">
+                          {mapPopup.capturedAt}
                         </span>
-                      </>
+                      )}
+                    </div>
+
+                    {/* Info da foto atual */}
+                    {mapPopup.photosList[mapPopup.photoIndex] && (
+                      <div className="bg-[#F5F7F4] p-2.5 rounded-lg border border-[#DDE4DE] space-y-1">
+                        <p className="font-semibold text-[#17211B] text-[11px]">{mapPopup.photosList[mapPopup.photoIndex].activity || mapPopup.photosList[mapPopup.photoIndex].local || 'Campo'}</p>
+                        <p className="text-[10px] text-[#5F6D65]">{mapPopup.photosList[mapPopup.photoIndex].notes || mapPopup.photosList[mapPopup.photoIndex].description || ''}</p>
+                      </div>
                     )}
-                    <span className="absolute bottom-1.5 right-1.5 bg-black/75 text-white text-[9px] font-mono px-1.5 py-0.5 rounded">
-                      {mapPopup.capturedAt}
-                    </span>
-                  </div>
+                  </>
                 ) : (
-                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg text-center text-[#5F6D65]">
-                    <Camera className="w-6 h-6 mx-auto mb-1 text-slate-400" />
-                    <p className="text-[11px]">Nenhuma foto direta anexada. Utilize a camada de Fotografias de Campo no mapa para vistorias fotográficas.</p>
+                  <div className="p-6 bg-slate-50 border border-dashed border-slate-300 rounded-lg text-center text-[#5F6D65]">
+                    <Camera className="w-8 h-8 mx-auto mb-2 text-slate-300" />
+                    <p className="text-[12px] font-semibold text-slate-500 mb-1">Sem imagens</p>
+                    <p className="text-[10px] text-slate-400">Nenhuma fotografia de campo registrada para esta área.</p>
                   </div>
                 )}
               </div>
             )}
+
 
             {/* TAB 4: HISTÓRICO */}
             {selectedTab === 'historico' && (
