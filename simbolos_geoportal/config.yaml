@@ -1,0 +1,48 @@
+project:
+  name: "UMBURANAS-PRAD"
+  target_directory: "/Users/maurivanvazribeiro/Documents/Maurivan_Workspace/04_Projetos_Tecnologia/UMBURANAS-PRAD/SIMBOLOS/deliverables/simbolos_geoportal"
+
+aoi:
+  # Informe no comando --aoi ou --bbox.
+  # bbox usa: oeste, sul, leste, norte em EPSG:4326.
+  vector_file: null
+  bbox: null
+
+ide_bahia:
+  enabled: true
+  resolution_m: 0.8
+  max_dimension_px: 8000
+  wms: "http://maps.informs.conder.ba.gov.br/arcgis/services/MOSAICO/RASTER_ORTOFOTO_SEI_2010_24/ImageServer/WMSServer"
+
+copernicus:
+  enabled: true
+  collection: "sentinel-2-l2a"
+  stac: "https://stac.dataspace.copernicus.eu/v1/"
+  resolution_m: 10
+  max_cloud_percent: 20
+  products:
+    - rgb
+    - ndvi
+    - ndwi
+    - savi
+
+inpe_bdc:
+  enabled: true
+  stac: "https://brazildatacube.dpi.inpe.br/stac/"
+  collection: "CB4-16D-2"
+  assets:
+    - NDVI
+    - EVI
+    - thumbnail
+
+opentopography:
+  enabled: true
+  dem_priority:
+    - ANADEM
+    - COP30
+    - NASADEM
+
+nasa:
+  enabled: false
+  short_name: "NASADEM_HGT"
+  version: "001"

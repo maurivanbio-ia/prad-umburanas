@@ -1,0 +1,38 @@
+[
+  {
+    "id": "acessos",
+    "filename": "acessos.geojson",
+    "featureCount": 269,
+    "geometryType": "LineString"
+  },
+  {
+    "id": "aerogerador",
+    "filename": "aerogerador.geojson",
+    "featureCount": 144,
+    "geometryType": "Point"
+  },
+  {
+    "id": "areas_prad_eco_38_areas",
+    "filename": "areas_prad_eco_38_areas.geojson",
+    "featureCount": 38,
+    "geometryType": "Point"
+  },
+  {
+    "id": "ceur",
+    "filename": "ceur.geojson",
+    "featureCount": 1,
+    "geometryType": "Polygon"
+  },
+  {
+    "id": "reserva_legal",
+    "filename": "reserva_legal.geojson",
+    "featureCount": 6,
+    "geometryType": "Polygon"
+  },
+  {
+    "id": "spe",
+    "filename": "spe.geojson",
+    "featureCount": 18,
+    "geometryType": "Polygon"
+  }
+]

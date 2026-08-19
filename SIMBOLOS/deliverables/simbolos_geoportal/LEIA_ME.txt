@@ -1,0 +1,20 @@
+SÍMBOLOS DO GEOPORTAL PRAD UMBURANAS
+
+Conteúdo
+1 a 7. Navegação principal.
+8 a 13. Camadas cartográficas.
+14 a 17. Marcadores de situação.
+
+Formatos
+SVG. Recomendado para Word, PowerPoint, Illustrator, InDesign e impressão.
+PNG. Fundo transparente, 1024 por 1024 pixels.
+
+Cores principais
+Oliva institucional: #365314
+Grafite: #17211B
+Reserva Legal: #4B8B3B
+Parques SPE: #A8C98F
+Concluída: #168F55
+Em andamento: #E5A413
+Atrasada: #CE4038
+Planejada: #6242B5

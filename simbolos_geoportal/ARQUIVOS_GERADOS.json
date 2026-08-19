@@ -1,0 +1,114 @@
+{
+  "syntax_check": {
+    "00_validar_ambiente.py": "OK",
+    "01_ide_bahia_ortofoto.py": "OK",
+    "02_copernicus_sentinel2.py": "OK",
+    "03_inpe_bdc.py": "OK",
+    "04_opentopography_dem.py": "OK",
+    "05_nasa_earthdata.py": "OK",
+    "06_pipeline_umburanas.py": "OK",
+    "geoportal_data/__init__.py": "OK",
+    "geoportal_data/common.py": "OK",
+    "geoportal_data/copernicus.py": "OK",
+    "geoportal_data/ide_bahia.py": "OK",
+    "geoportal_data/inpe_bdc.py": "OK",
+    "geoportal_data/nasa_earthdata.py": "OK",
+    "geoportal_data/opentopography.py": "OK",
+    "geoportal_data/orchestrator.py": "OK",
+    "instalar_no_destino.py": "OK"
+  },
+  "files": {
+    ".env.example": {
+      "size_bytes": 510,
+      "sha256": "7baf90a6302a85de75e2c2e6e6882d88989b2b161d24a55e3d6860b9099a0aeb"
+    },
+    ".gitignore": {
+      "size_bytes": 95,
+      "sha256": "47cb18ebd7b57cba4b04422b7ebb2898bb0c254b474393dbd5bf97ea5e2fe173"
+    },
+    "00_validar_ambiente.py": {
+      "size_bytes": 1221,
+      "sha256": "4ece85fd3ee96b4d5936c063ee5243d422d00c4a4bf57fca736adc0cd36bd6af"
+    },
+    "01_ide_bahia_ortofoto.py": {
+      "size_bytes": 1203,
+      "sha256": "c4c8e2cabc61f2c113e74d552334398879abd8b3f2d35748a7a13e7c25282b85"
+    },
+    "02_copernicus_sentinel2.py": {
+      "size_bytes": 2201,
+      "sha256": "f787d8f7916c04377b42bc07211d872f80dd407b64bade30c3f1179c2faed006"
+    },
+    "03_inpe_bdc.py": {
+      "size_bytes": 1773,
+      "sha256": "170bcea2d2fc285dbd605ba9e034949f3232861a8da8377df8ad156cc82c0946"
+    },
+    "04_opentopography_dem.py": {
+      "size_bytes": 1244,
+      "sha256": "c19b398f983c9a6b4c09355ca09c4f6ffee4f1c91c851d7833601bcb344ec339"
+    },
+    "05_nasa_earthdata.py": {
+      "size_bytes": 813,
+      "sha256": "1de8e9bfbab80de977c8d9e6da45cad40d6e12e8501030e0dec84add7fdd4dbe"
+    },
+    "06_pipeline_umburanas.py": {
+      "size_bytes": 1690,
+      "sha256": "2b8c816aea12b1993b5fa5fef0bd9e1279d83d58c0050958a011c3401f86a30b"
+    },
+    "README.md": {
+      "size_bytes": 5240,
+      "sha256": "0082f76fb2c477b7ee0bb91bac6b4207ef91f525ffcbd4cd59475bb65ea9eea1"
+    },
+    "config.yaml": {
+      "size_bytes": 1032,
+      "sha256": "e382f5445fbe50918ae879515842e7dd6d32cea8c121bdd6e98982d16aea89f2"
+    },
+    "downloads/.gitkeep": {
+      "size_bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "geoportal_data/__init__.py": {
+      "size_bytes": 90,
+      "sha256": "4aecdbbbd2e545d8cdba92de749ef422898c8ede373b3e8eba52cf7845a28cbb"
+    },
+    "geoportal_data/common.py": {
+      "size_bytes": 6965,
+      "sha256": "b7c773cf9c649b5f85c5037e4da155827c6fa3537b1eb7141a7af9d18347c1cf"
+    },
+    "geoportal_data/copernicus.py": {
+      "size_bytes": 7536,
+      "sha256": "7b07408a3ce4be6fc7ca2872a78f1fd1a5a366f7209a8f058ef8e6bf68b8d879"
+    },
+    "geoportal_data/ide_bahia.py": {
+      "size_bytes": 3147,
+      "sha256": "58a5e4b6fc3c4c42b7416534746f3bbcdc71cf52d62ccea20fd49cf56f4550ec"
+    },
+    "geoportal_data/inpe_bdc.py": {
+      "size_bytes": 3054,
+      "sha256": "2ca702a0fcdac63151dd5a046c19a2898bae144a6524fe16eb7603b570b63ffa"
+    },
+    "geoportal_data/nasa_earthdata.py": {
+      "size_bytes": 1700,
+      "sha256": "46562cec893f0269b0e8b686dc371de08c63dd4e517ae486ba341b26ddada013"
+    },
+    "geoportal_data/opentopography.py": {
+      "size_bytes": 2656,
+      "sha256": "ee3d2aea26cc975384718daea7d4f5916ad838923ca5c928ec73fd5a6fc70b0f"
+    },
+    "geoportal_data/orchestrator.py": {
+      "size_bytes": 5033,
+      "sha256": "844e1f879d56cd8a0ab6b5f572e9576259f27fd3f8e3ddbf8cad7269f6977cda"
+    },
+    "instalar_no_destino.py": {
+      "size_bytes": 1280,
+      "sha256": "023b6b008a3f76edd0e67752c2ca78c2b43329c82b77a61d36506f4a72871f01"
+    },
+    "logs/.gitkeep": {
+      "size_bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "requirements.txt": {
+      "size_bytes": 173,
+      "sha256": "45b46de7dd316dce879e7eb3aa95f39127270da01583467659e89ad7ddbd143f"
+    }
+  }
+}

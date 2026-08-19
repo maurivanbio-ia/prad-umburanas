@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgis/postgis:16-3.4
+    container_name: prad-postgis
+    restart: always
+    environment:
+      POSTGRES_DB: umburanas_prad
+      POSTGRES_USER: prad_user
+      POSTGRES_PASSWORD: prad_pass
+    ports:
+      - "5435:5432"
+    volumes:
+      - postgres_prad_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U prad_user -d umburanas_prad"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: umburanas-prad-web
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgres://prad_user:prad_pass@postgres:5432/umburanas_prad
+      - NEXT_PUBLIC_APP_URL=http://localhost:3000
+      - NODE_ENV=production
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_prad_data:

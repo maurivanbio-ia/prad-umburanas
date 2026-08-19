@@ -1,0 +1,51 @@
+{
+  "name": "umburanas-prad",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start -p 3000",
+    "lint": "next lint",
+    "db:import": "npx ts-node --compiler-options '{\"module\":\"CommonJS\"}' src/scripts/import_all.ts"
+  },
+  "dependencies": {
+    "@deck.gl/core": "^9.3.10",
+    "@deck.gl/geo-layers": "^9.3.10",
+    "@deck.gl/mesh-layers": "^9.3.10",
+    "@deck.gl/react": "^9.3.10",
+    "@loaders.gl/3d-tiles": "^4.4.4",
+    "@loaders.gl/las": "^4.4.4",
+    "@tanstack/react-table": "^8.20.5",
+    "clsx": "^2.1.1",
+    "date-fns": "^3.6.0",
+    "drizzle-orm": "^0.33.0",
+    "framer-motion": "^11.11.17",
+    "jspdf": "^4.2.1",
+    "lucide-react": "^0.454.0",
+    "maplibre-gl": "^4.7.1",
+    "next": "^14.2.18",
+    "pg": "^8.13.1",
+    "proj4": "^2.12.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-map-gl": "^8.1.2",
+    "recharts": "^2.13.3",
+    "tailwind-merge": "^2.5.4",
+    "xlsx": "^0.18.5",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.6",
+    "@types/pg": "^8.11.10",
+    "@types/proj4": "^2.5.5",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "autoprefixer": "^10.4.20",
+    "drizzle-kit": "^0.24.2",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.14",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.3"
+  }
+}
