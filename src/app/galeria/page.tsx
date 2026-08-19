@@ -266,21 +266,81 @@ export default function GaleriaPage() {
               </div>
 
               {/* Lightweight Interactive Tile Canvas with PRAD Pins */}
-              <div className="flex-1 relative w-full bg-[#EAECE9] overflow-hidden flex flex-col justify-between p-4">
-                {/* Dynamic Basemap Tiles (Esri Satellite, Carto Vector, Esri Topo) */}
-                <div
-                  className="absolute inset-0 bg-cover bg-center transition-all duration-300 opacity-90"
-                  style={{
-                    backgroundImage: `url('${
-                      basemapType === 'satellite'
-                        ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/14/8489/6288'
-                        : basemapType === 'terrain'
-                        ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/14/8489/6288'
-                        : 'https://a.basemaps.cartocdn.com/rastertiles/voyager/13/2642/3794.png'
-                    }')`,
-                    transform: `scale(${1 + (minimapZoom - 15) * 0.18})`,
-                  }}
-                />
+              <div className="flex-1 relative w-full bg-[#243329] overflow-hidden flex flex-col justify-between p-4">
+                {/* Dynamic Tile Grid - fills entire container */}
+                {(() => {
+                  const currentPhoto = activeMapPhoto || georeferencedPhotos[0];
+                  const lat = currentPhoto?.lat ?? -10.6272;
+                  const lng = currentPhoto?.lng ?? -41.5375;
+                  const z = minimapZoom;
+
+                  // OSM tile math
+                  const lat_r = (lat * Math.PI) / 180;
+                  const n = Math.pow(2, z);
+                  const centerTileX = Math.floor(((lng + 180) / 360) * n);
+                  const centerTileY = Math.floor(((1 - Math.log(Math.tan(lat_r) + 1 / Math.cos(lat_r)) / Math.PI) / 2) * n);
+
+                  // Sub-pixel offset so the exact coordinate is centred
+                  const fracX = ((lng + 180) / 360) * n - centerTileX;
+                  const fracY = ((1 - Math.log(Math.tan(lat_r) + 1 / Math.cos(lat_r)) / Math.PI) / 2) * n - centerTileY;
+
+                  const TILE_SIZE = 256;
+                  const GRID = 5; // 5×5 = 25 tiles, always enough to cover container
+                  const half = Math.floor(GRID / 2);
+
+                  const getTileUrl = (tx: number, ty: number) => {
+                    const clampedY = Math.max(0, Math.min(n - 1, ty));
+                    const wrappedX = ((tx % n) + n) % n;
+                    if (basemapType === 'satellite')
+                      return `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${clampedY}/${wrappedX}`;
+                    if (basemapType === 'terrain')
+                      return `https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/${z}/${clampedY}/${wrappedX}`;
+                    return `https://a.basemaps.cartocdn.com/rastertiles/voyager/${z}/${wrappedX}/${clampedY}.png`;
+                  };
+
+                  // Offset so center tile is centred in the container
+                  const offsetX = -fracX * TILE_SIZE;
+                  const offsetY = -fracY * TILE_SIZE;
+
+                  return (
+                    <div
+                      className="absolute inset-0 overflow-hidden"
+                      style={{ opacity: 0.95 }}
+                    >
+                      <div
+                        style={{
+                          position: 'absolute',
+                          left: `calc(50% + ${offsetX - half * TILE_SIZE}px)`,
+                          top: `calc(50% + ${offsetY - half * TILE_SIZE}px)`,
+                          display: 'grid',
+                          gridTemplateColumns: `repeat(${GRID}, ${TILE_SIZE}px)`,
+                          gridTemplateRows: `repeat(${GRID}, ${TILE_SIZE}px)`,
+                          width: GRID * TILE_SIZE,
+                          height: GRID * TILE_SIZE,
+                        }}
+                      >
+                        {Array.from({ length: GRID * GRID }).map((_, i) => {
+                          const col = i % GRID;
+                          const row = Math.floor(i / GRID);
+                          const tx = centerTileX + (col - half);
+                          const ty = centerTileY + (row - half);
+                          return (
+                            <img
+                              key={`${tx}-${ty}-${z}-${basemapType}`}
+                              src={getTileUrl(tx, ty)}
+                              width={TILE_SIZE}
+                              height={TILE_SIZE}
+                              style={{ display: 'block', imageRendering: 'auto' }}
+                              alt=""
+                              draggable={false}
+                            />
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
+
 
                 {/* Floating Minimap Zoom Controls (+ / -) */}
                 <div className="absolute bottom-16 right-4 z-20 flex flex-col bg-white rounded-xl shadow-lg border border-[#DDE4DE] overflow-hidden text-[#17211B] divide-y divide-[#DDE4DE]">
