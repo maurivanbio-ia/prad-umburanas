@@ -694,6 +694,7 @@ export default function GeoportalMap() {
 
             const pradPhotosList = matchedPhotos.length > 0 ? matchedPhotos : (geoData.photosGeoJSON?.features?.map((pf: any) => pf.properties) || []);
             const firstPhoto = pradPhotosList[(Number(glebaNum) || 1) % pradPhotosList.length];
+            const validPhotoUrl = firstPhoto?.storage_path || firstPhoto?.storagePath || (firstPhoto?.fileName ? `/figuras/${encodeURIComponent(firstPhoto.fileName)}` : '/figuras/WhatsApp%20Image%202026-08-19%20at%2009.58.32.jpeg');
 
             setMapPopup({
               type: 'prad',
@@ -707,10 +708,10 @@ export default function GeoportalMap() {
               atuacao,
               utmX,
               utmY,
-              photoUrl: firstPhoto?.storage_path || firstPhoto?.storagePath,
-              capturedAt: firstPhoto?.captured_at ? new Date(firstPhoto.captured_at).toLocaleDateString('pt-BR') : '19/08/2026',
+              photoUrl: validPhotoUrl,
+              capturedAt: firstPhoto?.captured_at || firstPhoto?.capturedAt ? new Date(firstPhoto.captured_at || firstPhoto.capturedAt).toLocaleDateString('pt-BR') : '19/08/2026',
               photosList: pradPhotosList,
-              photoIndex: 0,
+              photoIndex: (Number(glebaNum) || 1) % pradPhotosList.length,
               notes: dbArea?.notes && dbArea?.notes.length > 5
                 ? dbArea.notes
                 : `Área ${pradCode} (${pradName}) pertencente à Gleba ${glebaNum} no Parque Eólico ${spe}. Intervenção técnica: ${atuacao}. Coordenadas UTM: E ${utmX} / N ${utmY}.`,
@@ -1402,21 +1403,34 @@ export default function GeoportalMap() {
               <div className="space-y-2.5 text-xs">
                 {mapPopup.photoUrl ? (
                   <div className="aspect-video bg-slate-900 rounded-lg overflow-hidden border border-[#DDE4DE] relative group">
-                    <img src={mapPopup.photoUrl} alt={mapPopup.title} className="w-full h-full object-cover" />
+                    <img
+                      src={mapPopup.photoUrl}
+                      alt={mapPopup.title}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        const target = e.currentTarget;
+                        if (!target.src.includes('/uploads/photos/')) {
+                          target.src = target.src.replace('/figuras/', '/uploads/photos/');
+                        } else {
+                          target.src = '/figuras/WhatsApp%20Image%202026-08-19%20at%2009.58.32.jpeg';
+                        }
+                      }}
+                    />
                     {mapPopup.photosList && mapPopup.photosList.length > 1 && (
                       <>
                         <button
                           onClick={() => {
                             const nextIdx = (mapPopup.photoIndex - 1 + mapPopup.photosList.length) % mapPopup.photosList.length;
                             const current = mapPopup.photosList[nextIdx];
+                            const url = current.storage_path || current.storagePath || (current.fileName || current.file_name ? `/figuras/${encodeURIComponent(current.fileName || current.file_name)}` : '/figuras/WhatsApp%20Image%202026-08-19%20at%2009.58.32.jpeg');
                             setMapPopup({
                               ...mapPopup,
                               photoIndex: nextIdx,
-                              photoUrl: current.storagePath || current.storage_path || (current.fileName ? `/uploads/photos/${current.fileName.replace(/ /g, '_')}` : ''),
-                              capturedAt: current.capturedAt ? `${current.capturedAt} ${current.hora || ''}`.trim() : '18/08/2026',
+                              photoUrl: url,
+                              capturedAt: current.capturedAt || current.captured_at ? `${current.capturedAt || current.captured_at}`.trim() : '19/08/2026',
                             });
                           }}
-                          className="absolute left-1.5 top-1/2 -translate-y-1/2 bg-black/60 text-white p-1 rounded-full shadow"
+                          className="absolute left-1.5 top-1/2 -translate-y-1/2 bg-black/60 text-white p-1 rounded-full shadow cursor-pointer hover:bg-black/80"
                         >
                           <ChevronLeft className="w-4 h-4" />
                         </button>
@@ -1424,14 +1438,15 @@ export default function GeoportalMap() {
                           onClick={() => {
                             const nextIdx = (mapPopup.photoIndex + 1) % mapPopup.photosList.length;
                             const current = mapPopup.photosList[nextIdx];
+                            const url = current.storage_path || current.storagePath || (current.fileName || current.file_name ? `/figuras/${encodeURIComponent(current.fileName || current.file_name)}` : '/figuras/WhatsApp%20Image%202026-08-19%20at%2009.58.32.jpeg');
                             setMapPopup({
                               ...mapPopup,
                               photoIndex: nextIdx,
-                              photoUrl: current.storagePath || current.storage_path || (current.fileName ? `/uploads/photos/${current.fileName.replace(/ /g, '_')}` : ''),
-                              capturedAt: current.capturedAt ? `${current.capturedAt} ${current.hora || ''}`.trim() : '18/08/2026',
+                              photoUrl: url,
+                              capturedAt: current.capturedAt || current.captured_at ? `${current.capturedAt || current.captured_at}`.trim() : '19/08/2026',
                             });
                           }}
-                          className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-black/60 text-white p-1 rounded-full shadow"
+                          className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-black/60 text-white p-1 rounded-full shadow cursor-pointer hover:bg-black/80"
                         >
                           <ChevronRight className="w-4 h-4" />
                         </button>
