@@ -30,9 +30,13 @@ import {
   BarChart3,
   Download,
   Sparkles,
+  Search,
+  Eye,
 } from 'lucide-react';
 import proj4 from 'proj4';
 import { jsPDF } from 'jspdf';
+import { EXCEL_38_AREAS } from '@/data/excelData';
+import { EXCEL_PHOTOS } from '@/data/photos';
 
 proj4.defs('EPSG:31984', '+proj=utm +zone=24 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs +type=crs');
 proj4.defs('EPSG:4326', '+proj=longlat +datum=WGS84 +no_defs +type=crs');
@@ -266,6 +270,58 @@ export default function GeoportalMap() {
   });
 
   const [isLayerPanelOpen, setIsLayerPanelOpen] = useState(true);
+
+  // 🔍 Feature 1: Quick Search State & Autocomplete
+  const [quickSearch, setQuickSearch] = useState('');
+  const [isQuickSearchOpen, setIsQuickSearchOpen] = useState(false);
+
+  const filteredSearchItems = quickSearch.trim()
+    ? EXCEL_38_AREAS.filter(
+        (a) =>
+          a.pradCode.toLowerCase().includes(quickSearch.toLowerCase()) ||
+          a.name.toLowerCase().includes(quickSearch.toLowerCase()) ||
+          a.wind_complex.toLowerCase().includes(quickSearch.toLowerCase()) ||
+          a.action_type.toLowerCase().includes(quickSearch.toLowerCase())
+      )
+    : [];
+
+  const handleSelectSearchArea = (area: any) => {
+    if (!map.current) return;
+    const lat = area.lat ?? -10.63 + (area.number * 0.002);
+    const lng = area.lng ?? -41.53 + (area.number * 0.002);
+
+    map.current.flyTo({
+      center: [lng, lat],
+      zoom: 16.5,
+      duration: 1500,
+      essential: true,
+    });
+
+    const matchedPhotos = EXCEL_PHOTOS.filter((p) => p.pradCode === area.pradCode);
+    const firstPhoto = matchedPhotos[0];
+
+    setMapPopup({
+      type: 'prad',
+      title: `${area.pradCode} - ${area.name}`,
+      pradCode: area.pradCode,
+      pradName: area.name,
+      gleba: `Gleba ${area.number}`,
+      spe: area.wind_complex,
+      surface: area.areaHa,
+      status: area.status,
+      atuacao: area.action_type,
+      utmX: area.easting ? Number(area.easting).toLocaleString('pt-BR') : '227.972',
+      utmY: area.northing ? Number(area.northing).toLocaleString('pt-BR') : '8.828.658',
+      photoUrl: firstPhoto?.storagePath || null,
+      capturedAt: firstPhoto?.capturedAt || '',
+      photosList: matchedPhotos,
+      photoIndex: 0,
+      notes: area.notes || `Área ${area.pradCode} (${area.name}) pertencente ao Parque Eólico ${area.wind_complex}.`,
+    });
+    setSelectedTab(matchedPhotos.length > 0 ? 'fotografias' : 'resumo');
+    setQuickSearch('');
+    setIsQuickSearchOpen(false);
+  };
 
   const handleCenterCompletePolygon = () => {
     if (!map.current) return;
@@ -722,24 +778,101 @@ export default function GeoportalMap() {
           mapInstance.on('mouseleave', 'areas-circle', () => { mapInstance.getCanvas().style.cursor = ''; });
         }
 
-        // Photos GeoJSON Layer (Camera Symbols on map)
+        // 📸 Feature 4: Photos GeoJSON Layer (Clustered & Unclustered with Count Badges)
         if (geoData.photosGeoJSON?.features) {
           mapInstance.addSource('photos-source', {
             type: 'geojson',
             data: geoData.photosGeoJSON,
+            cluster: true,
+            clusterMaxZoom: 15,
+            clusterRadius: 40,
           });
 
+          // Clustered Photo Badge Circles (Green/Dark Emerald Theme)
+          mapInstance.addLayer({
+            id: 'photos-clusters',
+            type: 'circle',
+            source: 'photos-source',
+            filter: ['has', 'point_count'],
+            paint: {
+              'circle-color': [
+                'step',
+                ['get', 'point_count'],
+                '#00A651',
+                5,
+                '#365314',
+                10,
+                '#17211B',
+              ],
+              'circle-radius': [
+                'step',
+                ['get', 'point_count'],
+                16,
+                5,
+                20,
+                10,
+                24,
+              ],
+              'circle-stroke-width': 2.5,
+              'circle-stroke-color': '#FFFFFF',
+              'circle-opacity': layerOpacities.photos ?? 0.9,
+            },
+          });
+
+          // Clustered Photo Count Label
+          mapInstance.addLayer({
+            id: 'photos-cluster-count',
+            type: 'symbol',
+            source: 'photos-source',
+            filter: ['has', 'point_count'],
+            layout: {
+              'text-field': '{point_count}',
+              'text-size': 12,
+              'text-allow-overlap': true,
+            },
+            paint: {
+              'text-color': '#FFFFFF',
+              'text-halo-color': '#17211B',
+              'text-halo-width': 1,
+            },
+          });
+
+          // Unclustered Camera Pin Layer
           mapInstance.addLayer({
             id: 'photos-unclustered',
             type: 'symbol',
             source: 'photos-source',
+            filter: ['!', ['has', 'point_count']],
             layout: {
               'icon-image': 'icon-camera',
-              'icon-size': 0.032,
+              'icon-size': 0.035,
               'icon-allow-overlap': true,
+            },
+            paint: {
+              'icon-opacity': layerOpacities.photos ?? 0.9,
             },
           });
 
+          // Click on Cluster -> Smooth Zoom In to Expand
+          mapInstance.on('click', 'photos-clusters', (e) => {
+            const features = mapInstance.queryRenderedFeatures(e.point, { layers: ['photos-clusters'] });
+            if (!features || features.length === 0) return;
+            const clusterId = features[0].properties.cluster_id;
+            const source: any = mapInstance.getSource('photos-source');
+            source.getClusterExpansionZoom(clusterId, (err: any, zoom: number) => {
+              if (err) return;
+              mapInstance.easeTo({
+                center: (features[0].geometry as any).coordinates,
+                zoom: Math.min(zoom + 1, 18),
+                duration: 700,
+              });
+            });
+          });
+
+          mapInstance.on('mouseenter', 'photos-clusters', () => { mapInstance.getCanvas().style.cursor = 'pointer'; });
+          mapInstance.on('mouseleave', 'photos-clusters', () => { mapInstance.getCanvas().style.cursor = ''; });
+
+          // Click on Unclustered Photo -> Open Popup
           mapInstance.on('click', 'photos-unclustered', (e) => {
             if (!e.features || e.features.length === 0) return;
             const props = e.features[0].properties;
@@ -985,6 +1118,31 @@ export default function GeoportalMap() {
     toggleLayer('ceur-fill', layerVisibility.ceur);
   }, [layerVisibility]);
 
+  // 🎚️ Feature 2: Dynamically apply opacity sliders to MapLibre layers
+  useEffect(() => {
+    if (!map.current) return;
+    const m = map.current;
+    const setOpacity = (layerId: string, prop: string, val: number) => {
+      if (m.getLayer(layerId)) {
+        try {
+          m.setPaintProperty(layerId, prop, val);
+        } catch (e) {}
+      }
+    };
+
+    setOpacity('spe-fill', 'fill-opacity', (layerOpacities.spe ?? 0.6) * 0.45);
+    setOpacity('spe-outline', 'line-opacity', layerOpacities.spe ?? 0.6);
+    setOpacity('rl-fill', 'fill-opacity', (layerOpacities.reservaLegal ?? 0.6) * 0.55);
+    setOpacity('rl-outline', 'line-opacity', layerOpacities.reservaLegal ?? 0.6);
+    setOpacity('ceur-fill', 'fill-opacity', (layerOpacities.ceur ?? 1.0) * 0.1);
+    setOpacity('ceur-layer', 'line-opacity', layerOpacities.ceur ?? 1.0);
+    setOpacity('areas-circle', 'icon-opacity', layerOpacities.areas ?? 0.8);
+    setOpacity('photos-unclustered', 'icon-opacity', layerOpacities.photos ?? 0.9);
+    setOpacity('photos-clusters', 'circle-opacity', layerOpacities.photos ?? 0.9);
+    setOpacity('aero-circle', 'icon-opacity', layerOpacities.turbines ?? 1.0);
+    setOpacity('acessos-layer', 'line-opacity', layerOpacities.roads ?? 0.7);
+  }, [layerOpacities]);
+
   const totalDistance = getTotalLineDistance(measurePoints);
   const polygonArea = getPolygonAreaMeters(measurePoints);
   const polygonAreaHa = (polygonArea / 10000).toFixed(2);
@@ -995,22 +1153,88 @@ export default function GeoportalMap() {
       <div ref={mapContainer} className={`w-full h-full ${measureMode !== 'none' ? 'cursor-crosshair' : ''}`} />
 
       {/* TOP GIS WORKSTATION TOOLBAR (With Sharp SVG Symbols & Icons) */}
-      <div className="absolute top-4 left-24 z-20 flex items-center space-x-2">
+      <div className="absolute top-4 left-24 z-20 flex items-center space-x-2 flex-wrap gap-y-2">
+        {/* 🔍 Feature 1: Quick Search Box with Autocomplete and FlyTo */}
+        <div className="relative">
+          <div className="bg-white px-3 py-1.5 rounded-2xl border border-[#DDE4DE] shadow-md flex items-center gap-2 text-xs w-64 focus-within:ring-2 focus-within:ring-[#00A651] transition-all">
+            <Search className="w-3.5 h-3.5 text-[#5F6D65] flex-shrink-0" />
+            <input
+              type="text"
+              placeholder="Buscar PRAD, local, parque..."
+              value={quickSearch}
+              onChange={(e) => {
+                setQuickSearch(e.target.value);
+                setIsQuickSearchOpen(true);
+              }}
+              onFocus={() => setIsQuickSearchOpen(true)}
+              className="w-full bg-transparent focus:outline-none text-xs text-[#17211B] placeholder:text-[#5F6D65]"
+            />
+            {quickSearch && (
+              <button
+                onClick={() => {
+                  setQuickSearch('');
+                  setIsQuickSearchOpen(false);
+                }}
+                className="text-slate-400 hover:text-slate-700"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          {/* Autocomplete Results Dropdown */}
+          {isQuickSearchOpen && filteredSearchItems.length > 0 && (
+            <div className="absolute top-full left-0 mt-1.5 w-80 bg-white rounded-2xl border border-[#DDE4DE] shadow-2xl z-50 max-h-72 overflow-y-auto divide-y divide-[#DDE4DE] text-xs animate-in fade-in">
+              <div className="p-2 bg-[#F5F7F4] text-[10px] uppercase font-bold text-[#5F6D65] flex justify-between">
+                <span>Resultados ({filteredSearchItems.length})</span>
+                <span>Navegar (FlyTo)</span>
+              </div>
+              {filteredSearchItems.map((area) => {
+                const photosCount = EXCEL_PHOTOS.filter((p) => p.pradCode === area.pradCode).length;
+                return (
+                  <div
+                    key={area.id}
+                    onClick={() => handleSelectSearchArea(area)}
+                    className="p-2.5 hover:bg-emerald-50/70 cursor-pointer flex items-center justify-between transition-colors"
+                  >
+                    <div className="min-w-0 pr-2">
+                      <div className="flex items-center gap-1.5">
+                        <span className="bg-[#365314] text-white px-1.5 py-0.5 rounded text-[10px] font-bold font-mono">
+                          {area.pradCode}
+                        </span>
+                        <strong className="text-xs text-[#17211B] truncate">{area.name}</strong>
+                      </div>
+                      <span className="text-[10px] text-[#5F6D65] block truncate mt-0.5">
+                        {area.wind_complex} • {area.areaHa}
+                      </span>
+                    </div>
+                    {photosCount > 0 && (
+                      <span className="bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded-full text-[9px] font-bold font-mono flex-shrink-0 flex items-center gap-0.5">
+                        <Camera className="w-2.5 h-2.5" /> {photosCount}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
         {/* Base Map Selector */}
-        <div className="bg-white p-1 rounded-lg border border-[#DDE4DE] shadow-sm text-xs font-medium flex items-center space-x-1">
+        <div className="bg-white p-1 rounded-2xl border border-[#DDE4DE] shadow-md text-xs font-medium flex items-center space-x-1">
           <button
             onClick={() => setBaseMap('carto')}
-            className={`px-3 py-1 rounded flex items-center gap-1.5 transition-colors ${
-              baseMap === 'carto' ? 'bg-[#3B4E00] text-white font-semibold' : 'text-[#5F6D65] hover:bg-slate-100'
+            className={`px-3 py-1 rounded-xl flex items-center gap-1.5 transition-colors ${
+              baseMap === 'carto' ? 'bg-[#3B4E00] text-white font-semibold shadow-sm' : 'text-[#5F6D65] hover:bg-slate-100'
             }`}
           >
-            <MapIcon className="w-3.5 h-3.5 text-[#3B4E00] group-hover:text-white" />
+            <MapIcon className="w-3.5 h-3.5" />
             <span>Cartográfico</span>
           </button>
           <button
             onClick={() => setBaseMap('satellite')}
-            className={`px-3 py-1 rounded flex items-center gap-1.5 transition-colors ${
-              baseMap === 'satellite' ? 'bg-[#3B4E00] text-white font-semibold' : 'text-[#5F6D65] hover:bg-slate-100'
+            className={`px-3 py-1 rounded-xl flex items-center gap-1.5 transition-colors ${
+              baseMap === 'satellite' ? 'bg-[#3B4E00] text-white font-semibold shadow-sm' : 'text-[#5F6D65] hover:bg-slate-100'
             }`}
           >
             <Globe className="w-3.5 h-3.5" />
@@ -1018,8 +1242,8 @@ export default function GeoportalMap() {
           </button>
           <button
             onClick={() => setBaseMap('ortofoto')}
-            className={`px-3 py-1 rounded flex items-center gap-1.5 transition-colors ${
-              baseMap === 'ortofoto' ? 'bg-[#3B4E00] text-white font-semibold' : 'text-[#5F6D65] hover:bg-slate-100'
+            className={`px-3 py-1 rounded-xl flex items-center gap-1.5 transition-colors ${
+              baseMap === 'ortofoto' ? 'bg-[#3B4E00] text-white font-semibold shadow-sm' : 'text-[#5F6D65] hover:bg-slate-100'
             }`}
           >
             <Layers className="w-3.5 h-3.5" />
@@ -1145,76 +1369,221 @@ export default function GeoportalMap() {
                   className="rounded text-[#00A651] focus:ring-0 cursor-pointer w-4 h-4"
                 />
               </div>
+              {layerVisibility.ceur && (
+                <div className="flex items-center justify-between gap-2 pl-7 pr-1">
+                  <span className="text-[10px] text-[#5F6D65]">Opacidade:</span>
+                  <input
+                    type="range"
+                    min="0.1"
+                    max="1"
+                    step="0.05"
+                    value={layerOpacities.ceur}
+                    onChange={(e) => setLayerOpacities({ ...layerOpacities, ceur: parseFloat(e.target.value) })}
+                    className="w-24 h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#00A651]"
+                  />
+                  <span className="text-[10px] font-mono font-bold text-[#17211B] w-7 text-right">
+                    {Math.round(layerOpacities.ceur * 100)}%
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Parques SPE */}
-            <div className="border-t border-[#DDE4DE] pt-2.5 pb-1 flex items-center justify-between">
-              <span className="font-semibold text-[#17211B] flex items-center gap-2.5 text-xs">
-                <img src="/symbols/12_parques_spe.png" alt="Parques SPE" className="w-5 h-5 object-contain" />
-                <span>Parques SPE (18)</span>
-              </span>
-              <input
-                type="checkbox"
-                checked={layerVisibility.spe}
-                onChange={(e) => setLayerVisibility({ ...layerVisibility, spe: e.target.checked })}
-                className="rounded text-[#00A651] focus:ring-0 cursor-pointer w-4 h-4"
-              />
+            <div className="border-t border-[#DDE4DE] pt-2.5 pb-1 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-[#17211B] flex items-center gap-2.5 text-xs">
+                  <img src="/symbols/12_parques_spe.png" alt="Parques SPE" className="w-5 h-5 object-contain" />
+                  <span>Parques SPE (18)</span>
+                </span>
+                <input
+                  type="checkbox"
+                  checked={layerVisibility.spe}
+                  onChange={(e) => setLayerVisibility({ ...layerVisibility, spe: e.target.checked })}
+                  className="rounded text-[#00A651] focus:ring-0 cursor-pointer w-4 h-4"
+                />
+              </div>
+              {layerVisibility.spe && (
+                <div className="flex items-center justify-between gap-2 pl-7 pr-1">
+                  <span className="text-[10px] text-[#5F6D65]">Opacidade:</span>
+                  <input
+                    type="range"
+                    min="0.1"
+                    max="1"
+                    step="0.05"
+                    value={layerOpacities.spe}
+                    onChange={(e) => setLayerOpacities({ ...layerOpacities, spe: parseFloat(e.target.value) })}
+                    className="w-24 h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#00A651]"
+                  />
+                  <span className="text-[10px] font-mono font-bold text-[#17211B] w-7 text-right">
+                    {Math.round(layerOpacities.spe * 100)}%
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Reserva Legal */}
-            <div className="border-t border-[#DDE4DE] pt-2.5 pb-1 flex items-center justify-between">
-              <span className="font-semibold text-[#17211B] flex items-center gap-2.5 text-xs">
-                <img src="/symbols/11_reserva_legal.png" alt="Reserva Legal" className="w-5 h-5 object-contain" />
-                <span>Reserva Legal (6)</span>
-              </span>
-              <input
-                type="checkbox"
-                checked={layerVisibility.reservaLegal}
-                onChange={(e) => setLayerVisibility({ ...layerVisibility, reservaLegal: e.target.checked })}
-                className="rounded text-[#00A651] focus:ring-0 cursor-pointer w-4 h-4"
-              />
+            <div className="border-t border-[#DDE4DE] pt-2.5 pb-1 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-[#17211B] flex items-center gap-2.5 text-xs">
+                  <img src="/symbols/11_reserva_legal.png" alt="Reserva Legal" className="w-5 h-5 object-contain" />
+                  <span>Reserva Legal (6)</span>
+                </span>
+                <input
+                  type="checkbox"
+                  checked={layerVisibility.reservaLegal}
+                  onChange={(e) => setLayerVisibility({ ...layerVisibility, reservaLegal: e.target.checked })}
+                  className="rounded text-[#00A651] focus:ring-0 cursor-pointer w-4 h-4"
+                />
+              </div>
+              {layerVisibility.reservaLegal && (
+                <div className="flex items-center justify-between gap-2 pl-7 pr-1">
+                  <span className="text-[10px] text-[#5F6D65]">Opacidade:</span>
+                  <input
+                    type="range"
+                    min="0.1"
+                    max="1"
+                    step="0.05"
+                    value={layerOpacities.reservaLegal}
+                    onChange={(e) => setLayerOpacities({ ...layerOpacities, reservaLegal: parseFloat(e.target.value) })}
+                    className="w-24 h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#00A651]"
+                  />
+                  <span className="text-[10px] font-mono font-bold text-[#17211B] w-7 text-right">
+                    {Math.round(layerOpacities.reservaLegal * 100)}%
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Áreas PRAD */}
-            <div className="border-t border-[#DDE4DE] pt-2.5 pb-1 flex items-center justify-between">
-              <span className="font-semibold text-[#17211B] flex items-center gap-2.5 text-xs">
-                <img src="/symbols/03_areas_prad_folha.png" alt="Áreas PRAD" className="w-5 h-5 object-contain" />
-                <span>Áreas PRAD (38)</span>
-              </span>
-              <input
-                type="checkbox"
-                checked={layerVisibility.areas}
-                onChange={(e) => setLayerVisibility({ ...layerVisibility, areas: e.target.checked })}
-                className="rounded text-[#00A651] focus:ring-0 cursor-pointer w-4 h-4"
-              />
+            <div className="border-t border-[#DDE4DE] pt-2.5 pb-1 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-[#17211B] flex items-center gap-2.5 text-xs">
+                  <img src="/symbols/03_areas_prad_folha.png" alt="Áreas PRAD" className="w-5 h-5 object-contain" />
+                  <span>Áreas PRAD (38)</span>
+                </span>
+                <input
+                  type="checkbox"
+                  checked={layerVisibility.areas}
+                  onChange={(e) => setLayerVisibility({ ...layerVisibility, areas: e.target.checked })}
+                  className="rounded text-[#00A651] focus:ring-0 cursor-pointer w-4 h-4"
+                />
+              </div>
+              {layerVisibility.areas && (
+                <div className="flex items-center justify-between gap-2 pl-7 pr-1">
+                  <span className="text-[10px] text-[#5F6D65]">Opacidade:</span>
+                  <input
+                    type="range"
+                    min="0.1"
+                    max="1"
+                    step="0.05"
+                    value={layerOpacities.areas}
+                    onChange={(e) => setLayerOpacities({ ...layerOpacities, areas: parseFloat(e.target.value) })}
+                    className="w-24 h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#00A651]"
+                  />
+                  <span className="text-[10px] font-mono font-bold text-[#17211B] w-7 text-right">
+                    {Math.round(layerOpacities.areas * 100)}%
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Fotografias de Campo (Clusterizadas) */}
+            <div className="border-t border-[#DDE4DE] pt-2.5 pb-1 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-[#17211B] flex items-center gap-2.5 text-xs">
+                  <Camera className="w-4 h-4 text-[#00A651]" />
+                  <span>Fotos Georreferenciadas (16)</span>
+                </span>
+                <input
+                  type="checkbox"
+                  checked={layerVisibility.photos}
+                  onChange={(e) => setLayerVisibility({ ...layerVisibility, photos: e.target.checked })}
+                  className="rounded text-[#00A651] focus:ring-0 cursor-pointer w-4 h-4"
+                />
+              </div>
+              {layerVisibility.photos && (
+                <div className="flex items-center justify-between gap-2 pl-7 pr-1">
+                  <span className="text-[10px] text-[#5F6D65]">Opacidade:</span>
+                  <input
+                    type="range"
+                    min="0.1"
+                    max="1"
+                    step="0.05"
+                    value={layerOpacities.photos}
+                    onChange={(e) => setLayerOpacities({ ...layerOpacities, photos: parseFloat(e.target.value) })}
+                    className="w-24 h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#00A651]"
+                  />
+                  <span className="text-[10px] font-mono font-bold text-[#17211B] w-7 text-right">
+                    {Math.round(layerOpacities.photos * 100)}%
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Aerogeradores */}
-            <div className="border-t border-[#DDE4DE] pt-2.5 pb-1 flex items-center justify-between">
-              <span className="font-semibold text-[#17211B] flex items-center gap-2.5 text-xs">
-                <img src="/symbols/09_aerogeradores_turbina.png" alt="Aerogeradores" className="w-5 h-5 object-contain" />
-                <span>Aerogeradores (144)</span>
-              </span>
-              <input
-                type="checkbox"
-                checked={layerVisibility.turbines}
-                onChange={(e) => setLayerVisibility({ ...layerVisibility, turbines: e.target.checked })}
-                className="rounded text-[#00A651] focus:ring-0 cursor-pointer w-4 h-4"
-              />
+            <div className="border-t border-[#DDE4DE] pt-2.5 pb-1 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-[#17211B] flex items-center gap-2.5 text-xs">
+                  <img src="/symbols/09_aerogeradores_turbina.png" alt="Aerogeradores" className="w-5 h-5 object-contain" />
+                  <span>Aerogeradores (144)</span>
+                </span>
+                <input
+                  type="checkbox"
+                  checked={layerVisibility.turbines}
+                  onChange={(e) => setLayerVisibility({ ...layerVisibility, turbines: e.target.checked })}
+                  className="rounded text-[#00A651] focus:ring-0 cursor-pointer w-4 h-4"
+                />
+              </div>
+              {layerVisibility.turbines && (
+                <div className="flex items-center justify-between gap-2 pl-7 pr-1">
+                  <span className="text-[10px] text-[#5F6D65]">Opacidade:</span>
+                  <input
+                    type="range"
+                    min="0.1"
+                    max="1"
+                    step="0.05"
+                    value={layerOpacities.turbines}
+                    onChange={(e) => setLayerOpacities({ ...layerOpacities, turbines: parseFloat(e.target.value) })}
+                    className="w-24 h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#00A651]"
+                  />
+                  <span className="text-[10px] font-mono font-bold text-[#17211B] w-7 text-right">
+                    {Math.round(layerOpacities.turbines * 100)}%
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Acessos & Vias */}
-            <div className="border-t border-[#DDE4DE] pt-2.5 pb-1 flex items-center justify-between">
-              <span className="font-semibold text-[#17211B] flex items-center gap-2.5 text-xs">
-                <img src="/symbols/10_acessos_vias.png" alt="Acessos" className="w-5 h-5 object-contain" />
-                <span>Acessos & Vias</span>
-              </span>
-              <input
-                type="checkbox"
-                checked={layerVisibility.roads}
-                onChange={(e) => setLayerVisibility({ ...layerVisibility, roads: e.target.checked })}
-                className="rounded text-[#00A651] focus:ring-0 cursor-pointer w-4 h-4"
-              />
+            <div className="border-t border-[#DDE4DE] pt-2.5 pb-1 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-[#17211B] flex items-center gap-2.5 text-xs">
+                  <img src="/symbols/10_acessos_vias.png" alt="Acessos" className="w-5 h-5 object-contain" />
+                  <span>Acessos & Vias</span>
+                </span>
+                <input
+                  type="checkbox"
+                  checked={layerVisibility.roads}
+                  onChange={(e) => setLayerVisibility({ ...layerVisibility, roads: e.target.checked })}
+                  className="rounded text-[#00A651] focus:ring-0 cursor-pointer w-4 h-4"
+                />
+              </div>
+              {layerVisibility.roads && (
+                <div className="flex items-center justify-between gap-2 pl-7 pr-1">
+                  <span className="text-[10px] text-[#5F6D65]">Opacidade:</span>
+                  <input
+                    type="range"
+                    min="0.1"
+                    max="1"
+                    step="0.05"
+                    value={layerOpacities.roads}
+                    onChange={(e) => setLayerOpacities({ ...layerOpacities, roads: parseFloat(e.target.value) })}
+                    className="w-24 h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#00A651]"
+                  />
+                  <span className="text-[10px] font-mono font-bold text-[#17211B] w-7 text-right">
+                    {Math.round(layerOpacities.roads * 100)}%
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </div>
