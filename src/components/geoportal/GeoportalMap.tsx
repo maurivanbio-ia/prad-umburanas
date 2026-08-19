@@ -723,73 +723,7 @@ export default function GeoportalMap() {
           mapInstance.on('mouseleave', 'areas-circle', () => { mapInstance.getCanvas().style.cursor = ''; });
         }
 
-        // Photos GeoJSON (Instant Click Popup Card with Real Image Paths)
-        if (geoData.photosGeoJSON) {
-          mapInstance.addSource('photos-source', {
-            type: 'geojson',
-            data: geoData.photosGeoJSON,
-            cluster: false,
-          });
-
-          mapInstance.addLayer({
-            id: 'photos-unclustered',
-            type: 'symbol',
-            source: 'photos-source',
-            layout: {
-              'icon-image': 'icon-camera',
-              'icon-size': 0.025,
-              'icon-allow-overlap': true,
-            },
-          });
-
-          // Unclustered photo point click: render EXACT photo, metadata, and multi-photo carousel
-          mapInstance.on('click', 'photos-unclustered', (e) => {
-            if (!e.features || e.features.length === 0) return;
-            const clickedProps = e.features[0].properties;
-
-            // Find all photos matching this location or nearby coordinates
-            const matchingPhotos = geoData.photosGeoJSON?.features
-              ?.filter((f: any) => {
-                const p = f.properties;
-                if (p.local && clickedProps.local && p.local === clickedProps.local) return true;
-                if (p.pradCode && clickedProps.pradCode && p.pradCode === clickedProps.pradCode) return true;
-                const dLat = Math.abs(p.lat - clickedProps.lat);
-                const dLng = Math.abs(p.lng - clickedProps.lng);
-                return dLat < 0.001 && dLng < 0.001;
-              })
-              .map((f: any) => f.properties) || [clickedProps];
-
-            const pradCode = clickedProps.pradCode || (clickedProps.prad_number ? `PRAD-${String(clickedProps.prad_number).padStart(2, '0')}` : 'PRAD');
-            const title = `${pradCode} ${clickedProps.local ? `- ${clickedProps.local}` : ''}`.trim();
-            const spe = clickedProps.spe || 'UM-01';
-            const surface = clickedProps.areaHa || '0.2 ha';
-
-            const activePhoto = matchingPhotos[0];
-            const photoUrl = activePhoto.storagePath || activePhoto.storage_path || (activePhoto.fileName ? `/uploads/photos/${activePhoto.fileName.replace(/ /g, '_')}` : '');
-            const capturedAt = activePhoto.capturedAt ? `${activePhoto.capturedAt} ${activePhoto.hora || ''}`.trim() : '18/08/2026';
-            const notes = activePhoto.notes && activePhoto.notes !== 'Informações lidas do carimbo sobreposto.' 
-              ? activePhoto.notes 
-              : `Atividade: ${activePhoto.activity || 'Monitoramento'} em ${activePhoto.local || title}. Responsável: ${activePhoto.responsible || 'Equipe de Campo'}.`;
-
-            setMapPopup({
-              title,
-              status: clickedProps.status || 'Em andamento',
-              spe,
-              surface,
-              photosList: matchingPhotos,
-              photoIndex: 0,
-              notes,
-              photoUrl,
-              capturedAt,
-            });
-            setSelectedTab('fotografias');
-          });
-
-          mapInstance.on('mouseenter', 'photos-unclustered', () => { mapInstance.getCanvas().style.cursor = 'pointer'; });
-          mapInstance.on('mouseleave', 'photos-unclustered', () => { mapInstance.getCanvas().style.cursor = ''; });
-          mapInstance.on('mouseenter', 'photos-clusters', () => { mapInstance.getCanvas().style.cursor = 'pointer'; });
-          mapInstance.on('mouseleave', 'photos-clusters', () => { mapInstance.getCanvas().style.cursor = ''; });
-        }
+        // Photos GeoJSON is integrated directly inside PRAD Leaf Icons (areas-circle)
       } catch (err) {
         console.error('Error initializing map:', err);
       }
