@@ -778,136 +778,8 @@ export default function GeoportalMap() {
           mapInstance.on('mouseleave', 'areas-circle', () => { mapInstance.getCanvas().style.cursor = ''; });
         }
 
-        // 📸 Feature 4: Photos GeoJSON Layer (Clustered & Unclustered with Count Badges)
-        if (geoData.photosGeoJSON?.features) {
-          mapInstance.addSource('photos-source', {
-            type: 'geojson',
-            data: geoData.photosGeoJSON,
-            cluster: true,
-            clusterMaxZoom: 15,
-            clusterRadius: 40,
-          });
-
-          // Clustered Photo Badge Circles (Green/Dark Emerald Theme)
-          mapInstance.addLayer({
-            id: 'photos-clusters',
-            type: 'circle',
-            source: 'photos-source',
-            filter: ['has', 'point_count'],
-            paint: {
-              'circle-color': [
-                'step',
-                ['get', 'point_count'],
-                '#00A651',
-                5,
-                '#365314',
-                10,
-                '#17211B',
-              ],
-              'circle-radius': [
-                'step',
-                ['get', 'point_count'],
-                16,
-                5,
-                20,
-                10,
-                24,
-              ],
-              'circle-stroke-width': 2.5,
-              'circle-stroke-color': '#FFFFFF',
-              'circle-opacity': layerOpacities.photos ?? 0.9,
-            },
-          });
-
-          // Clustered Photo Count Label
-          mapInstance.addLayer({
-            id: 'photos-cluster-count',
-            type: 'symbol',
-            source: 'photos-source',
-            filter: ['has', 'point_count'],
-            layout: {
-              'text-field': '{point_count}',
-              'text-size': 12,
-              'text-allow-overlap': true,
-            },
-            paint: {
-              'text-color': '#FFFFFF',
-              'text-halo-color': '#17211B',
-              'text-halo-width': 1,
-            },
-          });
-
-          // Unclustered Camera Pin Layer
-          mapInstance.addLayer({
-            id: 'photos-unclustered',
-            type: 'symbol',
-            source: 'photos-source',
-            filter: ['!', ['has', 'point_count']],
-            layout: {
-              'icon-image': 'icon-camera',
-              'icon-size': 0.035,
-              'icon-allow-overlap': true,
-            },
-            paint: {
-              'icon-opacity': layerOpacities.photos ?? 0.9,
-            },
-          });
-
-          // Click on Cluster -> Smooth Zoom In to Expand
-          mapInstance.on('click', 'photos-clusters', (e) => {
-            const features = mapInstance.queryRenderedFeatures(e.point, { layers: ['photos-clusters'] });
-            if (!features || features.length === 0) return;
-            const clusterId = features[0].properties.cluster_id;
-            const source: any = mapInstance.getSource('photos-source');
-            source.getClusterExpansionZoom(clusterId, (err: any, zoom: number) => {
-              if (err) return;
-              mapInstance.easeTo({
-                center: (features[0].geometry as any).coordinates,
-                zoom: Math.min(zoom + 1, 18),
-                duration: 700,
-              });
-            });
-          });
-
-          mapInstance.on('mouseenter', 'photos-clusters', () => { mapInstance.getCanvas().style.cursor = 'pointer'; });
-          mapInstance.on('mouseleave', 'photos-clusters', () => { mapInstance.getCanvas().style.cursor = ''; });
-
-          // Click on Unclustered Photo -> Open Popup
-          mapInstance.on('click', 'photos-unclustered', (e) => {
-            if (!e.features || e.features.length === 0) return;
-            const props = e.features[0].properties;
-            const pradCode = props.pradCode || 'PRAD-17';
-            const matchedPhotos = (geoData.photosGeoJSON?.features || [])
-              .filter((pf: any) => pf.properties?.pradCode === pradCode)
-              .map((pf: any) => pf.properties);
-
-            const activeIdx = matchedPhotos.findIndex((p: any) => p.id === props.id || p.code === props.code);
-            const currentPhoto = matchedPhotos[activeIdx >= 0 ? activeIdx : 0] || props;
-
-            setMapPopup({
-              type: 'prad',
-              title: `${pradCode} - ${currentPhoto.local || 'Registro Fotográfico'}`,
-              pradCode,
-              pradName: currentPhoto.local,
-              gleba: pradCode,
-              spe: 'Umburanas',
-              surface: 'Evidência em Campo',
-              status: 'Concluído',
-              atuacao: currentPhoto.activity || 'Registro Fotográfico',
-              utmX: currentPhoto.easting ? Number(currentPhoto.easting).toLocaleString('pt-BR') : '229.273',
-              utmY: currentPhoto.northing ? Number(currentPhoto.northing).toLocaleString('pt-BR') : '8.828.407',
-              photoUrl: currentPhoto.storage_path || currentPhoto.storagePath,
-              capturedAt: currentPhoto.captured_at || currentPhoto.capturedAt || '',
-              photosList: matchedPhotos,
-              photoIndex: activeIdx >= 0 ? activeIdx : 0,
-              notes: currentPhoto.notes || `Registro fotográfico ${currentPhoto.code} georreferenciado em campo com precisão submétrica.`,
-            });
-            setSelectedTab('fotografias');
-          });
-
-          mapInstance.on('mouseenter', 'photos-unclustered', () => { mapInstance.getCanvas().style.cursor = 'pointer'; });
-          mapInstance.on('mouseleave', 'photos-unclustered', () => { mapInstance.getCanvas().style.cursor = ''; });
-        }
+        // Photos are not rendered as standalone map pins or clusters (clean cartographic design)
+        // They remain fully accessible via the Area Dossier and /galeria
       } catch (err) {
         console.error('Error initializing map:', err);
       }
@@ -1105,9 +977,6 @@ export default function GeoportalMap() {
     };
 
     toggleLayer('areas-circle', layerVisibility.areas);
-    toggleLayer('photos-unclustered', layerVisibility.photos);
-    toggleLayer('photos-clusters', layerVisibility.photos);
-    toggleLayer('photos-cluster-count', layerVisibility.photos);
     toggleLayer('aero-circle', layerVisibility.turbines);
     toggleLayer('acessos-layer', layerVisibility.roads);
     toggleLayer('rl-fill', layerVisibility.reservaLegal);
@@ -1137,8 +1006,6 @@ export default function GeoportalMap() {
     setOpacity('ceur-fill', 'fill-opacity', (layerOpacities.ceur ?? 1.0) * 0.1);
     setOpacity('ceur-layer', 'line-opacity', layerOpacities.ceur ?? 1.0);
     setOpacity('areas-circle', 'icon-opacity', layerOpacities.areas ?? 0.8);
-    setOpacity('photos-unclustered', 'icon-opacity', layerOpacities.photos ?? 0.9);
-    setOpacity('photos-clusters', 'circle-opacity', layerOpacities.photos ?? 0.9);
     setOpacity('aero-circle', 'icon-opacity', layerOpacities.turbines ?? 1.0);
     setOpacity('acessos-layer', 'line-opacity', layerOpacities.roads ?? 0.7);
   }, [layerOpacities]);
@@ -1482,39 +1349,6 @@ export default function GeoportalMap() {
                   />
                   <span className="text-[10px] font-mono font-bold text-[#17211B] w-7 text-right">
                     {Math.round(layerOpacities.areas * 100)}%
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {/* Fotografias de Campo (Clusterizadas) */}
-            <div className="border-t border-[#DDE4DE] pt-2.5 pb-1 space-y-1.5">
-              <div className="flex items-center justify-between">
-                <span className="font-semibold text-[#17211B] flex items-center gap-2.5 text-xs">
-                  <Camera className="w-4 h-4 text-[#00A651]" />
-                  <span>Fotos Georreferenciadas (16)</span>
-                </span>
-                <input
-                  type="checkbox"
-                  checked={layerVisibility.photos}
-                  onChange={(e) => setLayerVisibility({ ...layerVisibility, photos: e.target.checked })}
-                  className="rounded text-[#00A651] focus:ring-0 cursor-pointer w-4 h-4"
-                />
-              </div>
-              {layerVisibility.photos && (
-                <div className="flex items-center justify-between gap-2 pl-7 pr-1">
-                  <span className="text-[10px] text-[#5F6D65]">Opacidade:</span>
-                  <input
-                    type="range"
-                    min="0.1"
-                    max="1"
-                    step="0.05"
-                    value={layerOpacities.photos}
-                    onChange={(e) => setLayerOpacities({ ...layerOpacities, photos: parseFloat(e.target.value) })}
-                    className="w-24 h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#00A651]"
-                  />
-                  <span className="text-[10px] font-mono font-bold text-[#17211B] w-7 text-right">
-                    {Math.round(layerOpacities.photos * 100)}%
                   </span>
                 </div>
               )}
