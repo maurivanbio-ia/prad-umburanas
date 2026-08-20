@@ -17,11 +17,19 @@ export async function GET(request: Request) {
     return NextResponse.json({ success: false, error: 'Manifest not found' }, { status: 404 });
   }
 
-  const filePath = path.join(layersDir, `${layerId}.geojson`);
+  // Verifica se é arquivo JSON analítico ou GeoJSON
+  let filePath = path.join(layersDir, `${layerId}.geojson`);
+  if (!fs.existsSync(filePath)) {
+    filePath = path.join(process.cwd(), 'public/geodados', `${layerId}.json`);
+  }
+  if (!fs.existsSync(filePath)) {
+    filePath = path.join(layersDir, `${layerId}.json`);
+  }
+
   if (!fs.existsSync(filePath)) {
     return NextResponse.json({ success: false, error: `Layer ${layerId} not found` }, { status: 404 });
   }
 
-  const geojson = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-  return NextResponse.json(geojson);
+  const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+  return NextResponse.json(data);
 }

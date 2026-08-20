@@ -1,0 +1,10 @@
+{
+  "ndvi_medio": 0.21413972973823547,
+  "ndvi_maximo": 0.8154243230819702,
+  "ndvi_minimo": -0.0,
+  "cobertura_vegetal_alta_pct": 33.032943977082454,
+  "cobertura_vegetal_media_pct": 10.663116060441,
+  "solo_exposto_ou_escasso_pct": 56.30393996247655,
+  "data_coleta": "2026-07-28",
+  "sensor": "CBERS-4A WFI (INPE / Brazil Data Cube)"
+}

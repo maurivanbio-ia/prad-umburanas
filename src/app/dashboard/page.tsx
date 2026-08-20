@@ -1,324 +1,252 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import Header from '@/components/layout/Header';
+import React from 'react';
 import Link from 'next/link';
 import {
-  Layers,
-  CheckCircle2,
-  Clock,
-  AlertTriangle,
   TrendingUp,
-  MapPin,
-  Camera,
-  Calendar,
+  CheckCircle2,
+  AlertTriangle,
+  XCircle,
+  Clock,
   ArrowUpRight,
-  ChevronRight,
+  Compass,
+  Sprout,
   ShieldCheck,
-  FileSpreadsheet,
-  FileText,
+  Calendar,
+  Layers,
+  ChevronRight,
+  Camera,
   Activity,
-  Filter,
-  ArrowRight,
-  User,
-  AlertCircle,
+  FileText
 } from 'lucide-react';
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, LineChart, Line, Legend } from 'recharts';
+import {
+  KPIS_ESTRATEGICOS,
+  ALERTAS_ACIONAVEIS_CANONICOS,
+  AREAS_PRAD_CANONICAS,
+  AUDITORIA_QUALIDADE_DADOS
+} from '@/data/semanticDb';
 
-export default function DashboardPage() {
-  const [data, setData] = useState<any | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const DEFAULT_DASHBOARD_DATA = {
-    summary: {
-      totalAreas: 38,
-      totalHa: 65.2,
-      soilCompletedAreas: 28,
-      soilCompletedHa: 48.5,
-      remainingAreas: 10,
-      remainingHa: 16.7,
-      generalProgressPct: 74.4,
-      photosCount: 18,
-      georeferencedPhotosCount: 18,
-    },
-    statusCounts: {
-      'Concluído': 12,
-      'Em andamento': 22,
-      'Não iniciado': 4,
-      'Atrasado': 0,
-    },
-    planning: [],
-    schedule: [],
-    areas: [],
-  };
-
-  useEffect(() => {
-    fetch('/api/dashboard')
-      .then((res) => res.json())
-      .then((d) => {
-        if (d && d.summary) {
-          setData(d);
-        } else {
-          setData(DEFAULT_DASHBOARD_DATA);
-        }
-      })
-      .catch((err) => {
-        console.error('Dashboard load error:', err);
-        setData(DEFAULT_DASHBOARD_DATA);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, []);
-
-  if (loading || !data) {
-    return (
-      <div className="min-h-screen flex flex-col bg-[#F5F7F4] font-sans">
-        <Header />
-        <div className="flex-1 flex items-center justify-center p-12 pl-24">
-          <div className="text-center space-y-3">
-            <div className="w-8 h-8 border-4 border-[#00A651] border-t-transparent rounded-full animate-spin mx-auto" />
-            <p className="text-xs text-[#5F6D65] font-medium font-sans">Carregando indicadores executivos...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const barHectaresData = [
-    { name: 'Concluído', hectares: 41.87 },
-    { name: 'Em Andamento', hectares: 8.39 },
-    { name: 'Planejado', hectares: 0.0 },
-  ];
-
-  const temporalData = [
-    { fortnight: '1ª Q Ago/26', planejado: 19.0, realizado: 19.0 },
-    { fortnight: '2ª Q Ago/26', planejado: 50.26, realizado: 41.87 },
-    { fortnight: '1ª Q Set/26', planejado: 50.26, realizado: 50.26 },
-  ];
-
-  const priorityAreas = [
-    { code: 'BOTA FORA 01', local: 'Bota Fora 01', ha: '2,45 ha', status: 'Em andamento', deadline: '25 ago 2026', gravity: 'Alta', responsible: 'Equipe EcoBrasil' },
-    { code: 'CANTEIRO CENTRAL', local: 'Canteiro Central', ha: '5,12 ha', status: 'Em andamento', deadline: '28 ago 2026', gravity: 'Média', responsible: 'Equipe ENGIE' },
-    { code: 'JAZIDA SANTO ANJO', local: 'Jazida Santo Anjo', ha: '0,82 ha', status: 'Em andamento', deadline: '30 ago 2026', gravity: 'Média', responsible: 'Equipe Campo' },
-  ];
+export default function DashboardSituacaoPage() {
+  const kpis = KPIS_ESTRATEGICOS;
+  const alertas = ALERTAS_ACIONAVEIS_CANONICOS;
+  const areasCriticas = AREAS_PRAD_CANONICAS.filter((a) => a.resultadoAmbiental === 'critico');
+  const areasAtencao = AREAS_PRAD_CANONICAS.filter((a) => a.resultadoAmbiental === 'atencao');
+  const areasSatisfatorias = AREAS_PRAD_CANONICAS.filter((a) => a.resultadoAmbiental === 'satisfatorio');
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F5F7F4] font-sans text-[#17211B]">
-      <Header />
-
-      <main className="flex-1 w-full pl-24 pr-6 py-6 space-y-5 max-w-[1920px] mx-auto">
-        {/* Title Header (Replacing large green banner) */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#DDE4DE] pb-4">
+    <div className="min-h-screen bg-[#F5F7F4] text-[#17211B] p-6 lg:p-8 font-sans">
+      <div className="max-w-7xl mx-auto space-y-6">
+        
+        {/* CABEÇALHO DA CENTRAL DE SITUAÇÃO */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#DDE4DE] pb-5">
           <div>
-            <div className="flex items-center space-x-2 text-xs font-semibold text-[#5F6D65]">
-              <span>Conjunto Eólico Umburanas</span>
-              <span>•</span>
-              <span>ENGIE & EcoBrasil</span>
+            <div className="text-xs font-bold uppercase tracking-wider text-[#5F6D65] flex items-center gap-1.5 mb-1">
+              <span className="w-2 h-2 rounded-full bg-[#00A651]" />
+              <span>Painel Executivo de Situação Territorial</span>
             </div>
-            <h1 className="text-2xl font-bold tracking-tight text-[#17211B]">
-              Painel Executivo de Acompanhamento
+            <h1 className="text-2xl font-bold text-[#17211B] tracking-tight">
+              PRAD Umburanas • Central de Situação
             </h1>
+            <p className="text-sm text-[#5F6D65] mt-0.5">
+              Status consolidado da recuperação ambiental, execução física, conformidade e ações imediatas.
+            </p>
           </div>
 
-          <div className="flex items-center space-x-4 text-xs text-[#5F6D65] font-sans">
-            <div>
-              <span className="block text-[10px] uppercase font-bold text-slate-400">Período Analisado</span>
-              <span className="font-semibold text-[#17211B]">Agosto / 2026 (2ª Quinzena)</span>
-            </div>
-            <div className="h-6 w-px bg-[#DDE4DE]" />
-            <div>
-              <span className="block text-[10px] uppercase font-bold text-slate-400">Sincronização Base</span>
-              <span className="font-mono text-[#17211B]">19/08/2026 • 12:45</span>
-            </div>
-          </div>
-        </div>
-
-        {/* 4 EXECUTIVE KPI CARDS (Linear icons, large numbers, no colored circle backgrounds) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* KPI 1 */}
-          <div className="bg-white p-4 rounded-xl border border-[#DDE4DE] space-y-1">
-            <div className="flex items-center justify-between text-[#5F6D65]">
-              <span className="text-xs font-semibold">Progresso Físico Global</span>
-              <Activity className="w-4 h-4 text-[#00A651]" />
-            </div>
-            <div className="text-3xl font-semibold tracking-tight text-[#17211B]">
-              85,07%
-            </div>
-            <div className="text-xs text-[#1B8A5A] font-medium flex items-center gap-1">
-              <span>33 de 38 áreas concluídas</span>
-            </div>
-          </div>
-
-          {/* KPI 2 */}
-          <div className="bg-white p-4 rounded-xl border border-[#DDE4DE] space-y-1">
-            <div className="flex items-center justify-between text-[#5F6D65]">
-              <span className="text-xs font-semibold">Superfície Executada</span>
-              <Layers className="w-4 h-4 text-[#00A3E0]" />
-            </div>
-            <div className="text-3xl font-semibold tracking-tight text-[#17211B]">
-              41,87 <span className="text-sm font-normal text-[#5F6D65]">/ 50,26 ha</span>
-            </div>
-            <div className="text-xs text-[#5F6D65] font-medium">
-              8,39 ha em andamento
-            </div>
-          </div>
-
-          {/* KPI 3 */}
-          <div className="bg-white p-4 rounded-xl border border-[#DDE4DE] space-y-1">
-            <div className="flex items-center justify-between text-[#5F6D65]">
-              <span className="text-xs font-semibold">Áreas Concluídas</span>
-              <CheckCircle2 className="w-4 h-4 text-[#1B8A5A]" />
-            </div>
-            <div className="text-3xl font-semibold tracking-tight text-[#17211B]">
-              33 <span className="text-sm font-normal text-[#5F6D65]">de 38</span>
-            </div>
-            <div className="text-xs text-[#1B8A5A] font-medium">
-              100% amostragem validada
-            </div>
-          </div>
-
-          {/* KPI 4 */}
-          <div className="bg-white p-4 rounded-xl border border-[#DDE4DE] space-y-1">
-            <div className="flex items-center justify-between text-[#5F6D65]">
-              <span className="text-xs font-semibold">Áreas Críticas / Atrasadas</span>
-              <AlertTriangle className="w-4 h-4 text-[#C88B10]" />
-            </div>
-            <div className="text-3xl font-semibold tracking-tight text-[#C88B10]">
-              5 <span className="text-sm font-normal text-[#5F6D65]">áreas</span>
-            </div>
-            <div className="text-xs text-[#C88B10] font-medium">
-              Acompanhamento quinzenal
-            </div>
-          </div>
-        </div>
-
-        {/* DENSE CHARTS ROW */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          {/* Chart 1: Evolução Físico-Temporal */}
-          <div className="bg-white p-4 rounded-xl border border-[#DDE4DE] space-y-3">
-            <div className="flex items-center justify-between border-b border-[#DDE4DE] pb-2">
-              <h3 className="font-semibold text-sm text-[#17211B]">Evolução Físico-Temporal (Planejado vs Realizado)</h3>
-              <span className="text-xs text-[#5F6D65]">Hectares (ha)</span>
-            </div>
-            <div className="h-52">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={temporalData} margin={{ top: 10, right: 20, left: -20, bottom: 0 }}>
-                  <XAxis dataKey="fortnight" stroke="#5F6D65" fontSize={11} />
-                  <YAxis stroke="#5F6D65" fontSize={11} unit=" ha" />
-                  <Tooltip formatter={(val: any) => [`${val} ha`, 'Superfície']} />
-                  <Legend />
-                  <Line type="monotone" dataKey="planejado" stroke="#94A3B8" strokeDasharray="3 3" strokeWidth={1.5} name="Planejado" />
-                  <Line type="monotone" dataKey="realizado" stroke="#00A651" strokeWidth={2.5} name="Realizado" />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          {/* Chart 2: Distribuição de Hectares */}
-          <div className="bg-white p-4 rounded-xl border border-[#DDE4DE] space-y-3">
-            <div className="flex items-center justify-between border-b border-[#DDE4DE] pb-2">
-              <h3 className="font-semibold text-sm text-[#17211B]">Distribuição por Situação das Áreas</h3>
-              <span className="text-xs text-[#5F6D65]">Total: 50,26 ha</span>
-            </div>
-            <div className="h-52">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={barHectaresData} layout="vertical" margin={{ left: -10, right: 20, top: 10, bottom: 0 }}>
-                  <XAxis type="number" stroke="#5F6D65" fontSize={11} unit=" ha" />
-                  <YAxis type="category" dataKey="name" stroke="#5F6D65" fontSize={11} width={90} />
-                  <Tooltip formatter={(val: any) => [`${val} ha`, 'Área']} />
-                  <Bar dataKey="hectares" fill="#3B4E00" radius={[0, 4, 4, 0]} barSize={18} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
-
-        {/* BOTTOM ROW: PRIORITY LIST & UPCOMING MILESTONES */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-          {/* Priority List (Replaces passive table) */}
-          <div className="lg:col-span-2 bg-white rounded-xl border border-[#DDE4DE] overflow-hidden">
-            <div className="p-4 bg-[#F5F7F4] border-b border-[#DDE4DE] flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <AlertCircle className="w-4 h-4 text-[#C88B10]" />
-                <h3 className="font-semibold text-sm text-[#17211B]">Lista de Áreas Prioritárias (Prazo e Responsável)</h3>
+          <div className="flex items-center gap-3">
+            <div className="text-right">
+              <div className="text-[10px] uppercase font-bold text-[#5F6D65]">Desempenho Geral</div>
+              <div className="text-sm font-bold text-[#00A651] flex items-center gap-1 justify-end">
+                <CheckCircle2 className="w-4 h-4" />
+                <span>86,7% (BOM)</span>
               </div>
-              <Link href="/areas" className="text-xs font-semibold text-[#3B4E00] hover:underline flex items-center gap-1">
-                Ver todas as 38 áreas <ArrowRight className="w-3.5 h-3.5" />
+            </div>
+            <Link
+              href="/geoportal"
+              className="px-4 py-2 bg-[#00A651] hover:bg-[#008C44] text-white rounded-xl text-xs font-bold shadow-sm flex items-center gap-1.5 transition-all cursor-pointer"
+            >
+              <Compass className="w-4 h-4" />
+              <span>Abrir Mapa Operacional</span>
+            </Link>
+          </div>
+        </div>
+
+        {/* 4 GRANDES CARDS DE SITUAÇÃO */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white p-5 rounded-3xl border border-[#DDE4DE] shadow-sm flex flex-col justify-between">
+            <div>
+              <div className="text-xs font-bold text-[#5F6D65] uppercase flex items-center justify-between">
+                <span>Recuperação Ambiental</span>
+                <span className="text-xs font-bold text-[#00A651] flex items-center gap-0.5">
+                  <TrendingUp className="w-3.5 h-3.5" /> +6,2%
+                </span>
+              </div>
+              <div className="text-3xl font-bold text-[#17211B] mt-2">78,4%</div>
+            </div>
+            <div className="text-[11px] text-[#5F6D65] mt-3 pt-2 border-t border-[#DDE4DE]/60">
+              Meta contratual: <strong className="text-[#17211B]">85,0%</strong>
+            </div>
+          </div>
+
+          <div className="bg-white p-5 rounded-3xl border border-[#DDE4DE] shadow-sm flex flex-col justify-between">
+            <div>
+              <div className="text-xs font-bold text-[#5F6D65] uppercase flex items-center justify-between">
+                <span>Execução Física PRAD</span>
+                <span className="text-xs font-bold text-blue-600">No Prazo</span>
+              </div>
+              <div className="text-3xl font-bold text-[#17211B] mt-2">91,3%</div>
+            </div>
+            <div className="text-[11px] text-[#5F6D65] mt-3 pt-2 border-t border-[#DDE4DE]/60">
+              32 de 38 áreas concluídas
+            </div>
+          </div>
+
+          <div className="bg-white p-5 rounded-3xl border border-[#DDE4DE] shadow-sm flex flex-col justify-between">
+            <div>
+              <div className="text-xs font-bold text-[#5F6D65] uppercase flex items-center justify-between">
+                <span>Conformidade Legal</span>
+                <span className="text-xs font-bold text-emerald-700">INEMA / IBAMA</span>
+              </div>
+              <div className="text-3xl font-bold text-emerald-700 mt-2">96,2%</div>
+            </div>
+            <div className="text-[11px] text-[#5F6D65] mt-3 pt-2 border-t border-[#DDE4DE]/60">
+              100% de atendimento a condicionantes
+            </div>
+          </div>
+
+          <div className="bg-white p-5 rounded-3xl border border-[#DDE4DE] shadow-sm flex flex-col justify-between">
+            <div>
+              <div className="text-xs font-bold text-red-700 uppercase flex items-center justify-between">
+                <span>Áreas Críticas</span>
+                <span className="text-xs font-bold text-red-600">Requer Ação</span>
+              </div>
+              <div className="text-3xl font-bold text-red-700 mt-2">3 áreas</div>
+            </div>
+            <div className="text-[11px] text-red-600 mt-3 pt-2 border-t border-[#DDE4DE]/60 font-semibold">
+              7,8% do total dos polígonos
+            </div>
+          </div>
+        </div>
+
+        {/* SITUAÇÕES QUE EXIGEM AÇÃO (ALERTAS ACIONÁVEIS) */}
+        <div className="bg-white rounded-3xl border border-[#DDE4DE] p-6 shadow-sm space-y-4">
+          <div className="flex items-center justify-between border-b border-[#DDE4DE] pb-3">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-amber-600" />
+              <h2 className="text-base font-bold text-[#17211B]">
+                Situações que Exigem Ação Imediata ({alertas.length})
+              </h2>
+            </div>
+            <span className="text-xs text-[#5F6D65]">Prioridade operacional</span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {alertas.map((alerta) => (
+              <div
+                key={alerta.id}
+                className={`p-4 rounded-2xl border flex flex-col justify-between gap-3 text-xs ${
+                  alerta.criticidade === 'critico'
+                    ? 'bg-red-50/60 border-red-200'
+                    : alerta.criticidade === 'atencao'
+                    ? 'bg-amber-50/60 border-amber-200'
+                    : 'bg-blue-50/60 border-blue-200'
+                }`}
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-mono font-bold text-[10px] px-2 py-0.5 rounded bg-white border border-[#DDE4DE]">
+                      {alerta.codigoArea}
+                    </span>
+                    <span className={`text-[10px] font-bold uppercase ${
+                      alerta.criticidade === 'critico' ? 'text-red-700' :
+                      alerta.criticidade === 'atencao' ? 'text-amber-700' : 'text-blue-700'
+                    }`}>
+                      {alerta.tipo}
+                    </span>
+                  </div>
+                  <h3 className="font-bold text-xs text-[#17211B] mt-1">{alerta.titulo}</h3>
+                  <p className="text-[11px] text-[#5F6D65] mt-0.5">{alerta.descricao}</p>
+                </div>
+
+                <div className="pt-2 border-t border-black/5 flex items-center justify-between">
+                  <span className="text-[10px] text-[#5F6D65]">Detectado em: {alerta.dataGeracao}</span>
+                  <Link
+                    href={alerta.rotaAcao}
+                    className="px-3 py-1.5 bg-[#00A651] hover:bg-[#008C44] text-white font-bold rounded-xl flex items-center gap-1 shadow-sm transition-all"
+                  >
+                    <span>{alerta.acaoSugerida}</span>
+                    <ArrowUpRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* MAPA DE SITUAÇÃO E DISTRIBUIÇÃO DAS 38 ÁREAS */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 bg-white rounded-3xl border border-[#DDE4DE] p-6 shadow-sm space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-base text-[#17211B]">Distribuição Territorial do PRAD</h3>
+                <p className="text-xs text-[#5F6D65]">Estado das 38 áreas por Resultado Ecológico</p>
+              </div>
+              <Link href="/areas" className="text-xs font-bold text-[#00A651] hover:underline flex items-center gap-1">
+                <span>Ver todas as 38 áreas</span>
+                <ChevronRight className="w-3.5 h-3.5" />
               </Link>
             </div>
 
-            <div className="divide-y divide-[#DDE4DE] text-xs">
-              {priorityAreas.map((item) => (
-                <div key={item.code} className="p-3.5 flex items-center justify-between hover:bg-slate-50 transition-colors">
-                  <div className="space-y-0.5">
-                    <span className="font-mono font-bold text-[#17211B] block">{item.code}</span>
-                    <span className="text-[#5F6D65]">{item.local} • {item.ha}</span>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {AREAS_PRAD_CANONICAS.slice(0, 16).map((area) => (
+                <Link
+                  key={area.id}
+                  href={`/areas/${area.id}`}
+                  className={`p-3 rounded-2xl border transition-all text-xs flex flex-col justify-between ${
+                    area.resultadoAmbiental === 'satisfatorio'
+                      ? 'bg-emerald-50/50 border-emerald-200 hover:border-emerald-500'
+                      : area.resultadoAmbiental === 'atencao'
+                      ? 'bg-amber-50/50 border-amber-200 hover:border-amber-500'
+                      : 'bg-red-50/50 border-red-200 hover:border-red-500'
+                  }`}
+                >
+                  <div className="font-mono font-bold text-[10px] text-[#17211B]">{area.id}</div>
+                  <div className="font-bold text-xs text-[#17211B] truncate mt-1">{area.nome}</div>
+                  <div className="text-[10px] text-[#5F6D65] mt-1 flex items-center justify-between">
+                    <span>{area.areaHa} ha</span>
+                    <strong className="text-[#00A651]">{area.indiceRecuperacao}%</strong>
                   </div>
-
-                  <div className="text-right space-y-0.5">
-                    <span className="text-[#5F6D65] block font-mono text-[11px]">Prazo: {item.deadline}</span>
-                    <span className="text-[#5F6D65] block text-[11px]">{item.responsible}</span>
-                  </div>
-
-                  <div className="flex items-center space-x-3">
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                      item.gravity === 'Alta' ? 'bg-red-50 text-[#C95142] border border-red-200' : 'bg-amber-50 text-[#C88B10] border border-amber-200'
-                    }`}>
-                      Gravidade {item.gravity}
-                    </span>
-
-                    <Link
-                      href="/areas"
-                      className="px-2.5 py-1 text-xs border border-[#DDE4DE] rounded hover:bg-slate-100 font-medium text-[#17211B]"
-                    >
-                      Ação
-                    </Link>
-                  </div>
-                </div>
+                </Link>
               ))}
             </div>
           </div>
 
-          {/* Upcoming Milestones */}
-          <div className="bg-white p-4 rounded-xl border border-[#DDE4DE] space-y-3 flex flex-col justify-between">
-            <div>
-              <h3 className="font-semibold text-sm text-[#17211B] border-b border-[#DDE4DE] pb-2">
-                Próximos Marcos Operacionais
-              </h3>
-
-              <div className="space-y-3 mt-3 text-xs">
-                <div className="p-2.5 bg-[#F5F7F4] rounded border border-[#DDE4DE] space-y-1">
-                  <div className="flex justify-between font-semibold text-[#17211B]">
-                    <span>Fechamento da 2ª Quinzena</span>
-                    <span className="font-mono text-[10px] text-[#00A651]">31/08</span>
-                  </div>
-                  <p className="text-[#5F6D65] text-[11px]">
-                    Consolidação dos 50,26 hectares de área amostrada.
-                  </p>
-                </div>
-
-                <div className="p-2.5 bg-[#F5F7F4] rounded border border-[#DDE4DE] space-y-1">
-                  <div className="flex justify-between font-semibold text-[#17211B]">
-                    <span>Relatório Fotográfico Quinzenal</span>
-                    <span className="font-mono text-[10px] text-[#00A3E0]">02/09</span>
-                  </div>
-                  <p className="text-[#5F6D65] text-[11px]">
-                    Vincular 2 fotos pendentes de geolocalização.
-                  </p>
-                </div>
-              </div>
+          {/* EVOLUÇÃO TEMPORAL & PRÓXIMAS ATIVIDADES */}
+          <div className="bg-white rounded-3xl border border-[#DDE4DE] p-6 shadow-sm space-y-4">
+            <div className="flex items-center justify-between border-b border-[#DDE4DE] pb-3">
+              <h3 className="font-bold text-base text-[#17211B]">Próximas Atividades</h3>
+              <Link href="/planejamento" className="text-xs font-bold text-[#00A651] hover:underline">
+                Cronograma
+              </Link>
             </div>
 
-            <Link
-              href="/relatorios"
-              className="w-full bg-[#3B4E00] hover:bg-[#2C3A00] text-white font-semibold text-xs py-2 rounded text-center block shadow-sm transition-colors"
-            >
-              Gerar Relatório PDF
-            </Link>
+            <div className="space-y-3 text-xs">
+              <div className="p-3 bg-[#F5F7F4] rounded-2xl border border-[#DDE4DE]">
+                <div className="font-bold text-[#17211B]">Plantio de Enriquecimento (250 mudas)</div>
+                <div className="text-[#5F6D65] text-[11px] mt-0.5">Área UMB25.BF11 • Previsão: 22/08/2026</div>
+              </div>
+              <div className="p-3 bg-[#F5F7F4] rounded-2xl border border-[#DDE4DE]">
+                <div className="font-bold text-[#17211B]">Vistoria Semestral de Regeneração</div>
+                <div className="text-[#5F6D65] text-[11px] mt-0.5">Área UMB08.PR08 • Previsão: 24/08/2026</div>
+              </div>
+              <div className="p-3 bg-[#F5F7F4] rounded-2xl border border-[#DDE4DE]">
+                <div className="font-bold text-[#17211B]">Manutenção de Paliçadas & Drenagens</div>
+                <div className="text-[#5F6D65] text-[11px] mt-0.5">Área UMB03.PR03 • Previsão: 26/08/2026</div>
+              </div>
+            </div>
           </div>
         </div>
-      </main>
+
+      </div>
     </div>
   );
 }

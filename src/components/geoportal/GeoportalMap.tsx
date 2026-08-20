@@ -32,6 +32,17 @@ import {
   Sparkles,
   Search,
   Eye,
+  Mountain,
+  Sprout,
+  CloudRain,
+  Droplets,
+  Compass,
+  Landmark,
+  Route,
+  ShieldCheck,
+  Spline,
+  SunMedium,
+  ChevronRight as ArrowRightIcon,
 } from 'lucide-react';
 import proj4 from 'proj4';
 import { jsPDF } from 'jspdf';
@@ -249,6 +260,14 @@ export default function GeoportalMap() {
   const [mapPopup, setMapPopup] = useState<any | null>(null);
   const [selectedTab, setSelectedTab] = useState<'resumo' | 'atividades' | 'fotografias' | 'historico'>('resumo');
 
+  // Modais Analíticos de Geodados
+  const [showClimateModal, setShowClimateModal] = useState(false);
+  const [showTerrainModal, setShowTerrainModal] = useState(false);
+  const [showNdviModal, setShowNdviModal] = useState(false);
+  const [climateData, setClimateData] = useState<any | null>(null);
+  const [terrainData, setTerrainData] = useState<any | null>(null);
+  const [ndviData, setNdviData] = useState<any | null>(null);
+
   const [layerVisibility, setLayerVisibility] = useState<Record<string, boolean>>({
     areas: true,
     photos: true,
@@ -257,6 +276,13 @@ export default function GeoportalMap() {
     reservaLegal: true,
     spe: true,
     ceur: true,
+    limiteIbge: true,
+    hillshade: true,
+    slope: false,
+    aspect: false,
+    curvasNivel: false,
+    ndviRaster: false,
+    ndwiRaster: false,
   });
 
   const [layerOpacities, setLayerOpacities] = useState<Record<string, number>>({
@@ -267,9 +293,34 @@ export default function GeoportalMap() {
     reservaLegal: 0.6,
     spe: 0.6,
     ceur: 1.0,
+    limiteIbge: 0.85,
+    hillshade: 0.65,
+    slope: 0.75,
+    aspect: 0.70,
+    curvasNivel: 0.80,
+    ndviRaster: 0.75,
+    ndwiRaster: 0.75,
   });
 
   const [isLayerPanelOpen, setIsLayerPanelOpen] = useState(true);
+
+  // Carregar dados analíticos (Relevo, NDVI, Clima)
+  useEffect(() => {
+    fetch('/api/layers?layer=climatologia_pluviometria_umburanas')
+      .then((r) => r.json())
+      .then((d) => setClimateData(d))
+      .catch(() => {});
+
+    fetch('/api/layers?layer=estatisticas_relevo')
+      .then((r) => r.json())
+      .then((d) => setTerrainData(d))
+      .catch(() => {});
+
+    fetch('/api/layers?layer=resumo_vegetacao_ndvi')
+      .then((r) => r.json())
+      .then((d) => setNdviData(d))
+      .catch(() => {});
+  }, []);
 
   // 🔍 Feature 1: Quick Search State & Autocomplete
   const [quickSearch, setQuickSearch] = useState('');
@@ -435,6 +486,118 @@ export default function GeoportalMap() {
             'circle-stroke-color': '#FFFFFF',
           },
         });
+
+        const fullBBoxCoords: [[number, number], [number, number], [number, number], [number, number]] = [
+          [-42.7995, -9.0005],
+          [-39.4995, -9.0005],
+          [-39.4995, -12.0005],
+          [-42.7995, -12.0005],
+        ];
+
+        // 🏔️ Hillshade Raster Overlay (Copernicus DEM 30m - Cobertura Total)
+        try {
+          mapInstance.addSource('hillshade-raster-source', {
+            type: 'image',
+            url: '/data/layers/hillshade_relevo.png',
+            coordinates: fullBBoxCoords,
+          });
+          mapInstance.addLayer({
+            id: 'hillshade-raster-layer',
+            type: 'raster',
+            source: 'hillshade-raster-source',
+            paint: {
+              'raster-opacity': 0.65,
+            },
+          });
+        } catch (e) {}
+
+        // 🌱 NDVI Raster Overlay (Cobertura Total)
+        try {
+          mapInstance.addSource('ndvi-raster-source', {
+            type: 'image',
+            url: '/data/layers/ndvi_vegetacao.png',
+            coordinates: fullBBoxCoords,
+          });
+          mapInstance.addLayer({
+            id: 'ndvi-raster-layer',
+            type: 'raster',
+            source: 'ndvi-raster-source',
+            layout: {
+              visibility: 'none',
+            },
+            paint: {
+              'raster-opacity': 0.75,
+            },
+          });
+        } catch (e) {}
+
+        // 📐 Slope / Declividade Raster Overlay (Cobertura Total)
+        try {
+          mapInstance.addSource('slope-raster-source', {
+            type: 'image',
+            url: '/data/layers/slope_declividade.png',
+            coordinates: fullBBoxCoords,
+          });
+          mapInstance.addLayer({
+            id: 'slope-raster-layer',
+            type: 'raster',
+            source: 'slope-raster-source',
+            layout: { visibility: 'none' },
+            paint: { 'raster-opacity': 0.75 },
+          });
+        } catch (e) {}
+
+        // 🧭 Aspect / Orientação de Encostas Raster Overlay (Cobertura Total)
+        try {
+          mapInstance.addSource('aspect-raster-source', {
+            type: 'image',
+            url: '/data/layers/aspect_orientacao.png',
+            coordinates: fullBBoxCoords,
+          });
+          mapInstance.addLayer({
+            id: 'aspect-raster-layer',
+            type: 'raster',
+            source: 'aspect-raster-source',
+            layout: { visibility: 'none' },
+            paint: { 'raster-opacity': 0.70 },
+          });
+        } catch (e) {}
+
+        // 💧 NDWI / Umidade Raster Overlay (Cobertura Total)
+        try {
+          mapInstance.addSource('ndwi-raster-source', {
+            type: 'image',
+            url: '/data/layers/ndwi_umidade.png',
+            coordinates: fullBBoxCoords,
+          });
+          mapInstance.addLayer({
+            id: 'ndwi-raster-layer',
+            type: 'raster',
+            source: 'ndwi-raster-source',
+            layout: { visibility: 'none' },
+            paint: { 'raster-opacity': 0.75 },
+          });
+        } catch (e) {}
+
+        // 〰️ Curvas de Nível Vetoriais (50m)
+        try {
+          const curvasRes = await fetch('/api/layers?layer=curvas_nivel');
+          const curvasData = await curvasRes.json();
+          if (curvasData.features) {
+            mapInstance.addSource('curvas-source', { type: 'geojson', data: curvasData });
+            mapInstance.addLayer({
+              id: 'curvas-layer',
+              type: 'line',
+              source: 'curvas-source',
+              layout: { visibility: 'none' },
+              paint: {
+                'line-color': ['case', ['==', ['get', 'tipo'], 'Mestra'], '#854D0E', '#A16207'],
+                'line-width': ['case', ['==', ['get', 'tipo'], 'Mestra'], 1.8, 1.0],
+                'line-opacity': 0.8,
+              },
+            });
+          }
+        } catch (e) {}
 
         // CEUR Boundary Fill & Line with Auto-Centering (fitBounds)
         const ceurRes = await fetch('/api/layers?layer=ceur');
@@ -626,6 +789,26 @@ export default function GeoportalMap() {
             },
           });
         }
+
+        // Limite Municipal Oficial de Umburanas (IBGE)
+        try {
+          const ibgeRes = await fetch('/api/layers?layer=limite_ibge');
+          const ibgeData = await ibgeRes.json();
+          if (ibgeData.features) {
+            mapInstance.addSource('limite-ibge-source', { type: 'geojson', data: ibgeData });
+            mapInstance.addLayer({
+              id: 'limite-ibge-layer',
+              type: 'line',
+              source: 'limite-ibge-source',
+              paint: {
+                'line-color': '#FBBF24',
+                'line-width': ['interpolate', ['linear'], ['zoom'], 8, 2.0, 14, 3.2],
+                'line-dasharray': [6, 4],
+              },
+            });
+          }
+        } catch (e) {}
+
 
         // Acessos
         const acessosRes = await fetch('/api/layers?layer=acessos');
@@ -985,6 +1168,13 @@ export default function GeoportalMap() {
     toggleLayer('spe-outline', layerVisibility.spe);
     toggleLayer('ceur-layer', layerVisibility.ceur);
     toggleLayer('ceur-fill', layerVisibility.ceur);
+    toggleLayer('limite-ibge-layer', layerVisibility.limiteIbge);
+    toggleLayer('hillshade-raster-layer', layerVisibility.hillshade);
+    toggleLayer('slope-raster-layer', layerVisibility.slope);
+    toggleLayer('aspect-raster-layer', layerVisibility.aspect);
+    toggleLayer('curvas-layer', layerVisibility.curvasNivel);
+    toggleLayer('ndvi-raster-layer', layerVisibility.ndviRaster);
+    toggleLayer('ndwi-raster-layer', layerVisibility.ndwiRaster);
   }, [layerVisibility]);
 
   // 🎚️ Feature 2: Dynamically apply opacity sliders to MapLibre layers
@@ -1008,6 +1198,13 @@ export default function GeoportalMap() {
     setOpacity('areas-circle', 'icon-opacity', layerOpacities.areas ?? 0.8);
     setOpacity('aero-circle', 'icon-opacity', layerOpacities.turbines ?? 1.0);
     setOpacity('acessos-layer', 'line-opacity', layerOpacities.roads ?? 0.7);
+    setOpacity('limite-ibge-layer', 'line-opacity', layerOpacities.limiteIbge ?? 0.85);
+    setOpacity('hillshade-raster-layer', 'raster-opacity', layerOpacities.hillshade ?? 0.65);
+    setOpacity('slope-raster-layer', 'raster-opacity', layerOpacities.slope ?? 0.75);
+    setOpacity('aspect-raster-layer', 'raster-opacity', layerOpacities.aspect ?? 0.70);
+    setOpacity('curvas-layer', 'line-opacity', layerOpacities.curvasNivel ?? 0.80);
+    setOpacity('ndvi-raster-layer', 'raster-opacity', layerOpacities.ndviRaster ?? 0.75);
+    setOpacity('ndwi-raster-layer', 'raster-opacity', layerOpacities.ndwiRaster ?? 0.75);
   }, [layerOpacities]);
 
   const totalDistance = getTotalLineDistance(measurePoints);
@@ -1419,6 +1616,376 @@ export default function GeoportalMap() {
                 </div>
               )}
             </div>
+            {/* Limite Municipal IBGE */}
+            <div className="border-t border-[#DDE4DE] pt-2.5 pb-1 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-[#17211B] flex items-center gap-2.5 text-xs">
+                  <span className="w-5 h-5 rounded-md bg-amber-500/15 flex items-center justify-center text-amber-600">
+                    <Landmark className="w-3.5 h-3.5" />
+                  </span>
+                  <span>Limite Municipal (IBGE)</span>
+                </span>
+                <input
+                  type="checkbox"
+                  checked={layerVisibility.limiteIbge}
+                  onChange={(e) => setLayerVisibility({ ...layerVisibility, limiteIbge: e.target.checked })}
+                  className="rounded text-[#EAB308] focus:ring-0 cursor-pointer w-4 h-4"
+                />
+              </div>
+              {layerVisibility.limiteIbge && (
+                <div className="flex items-center justify-between gap-2 pl-7 pr-1">
+                  <span className="text-[10px] text-[#5F6D65]">Opacidade:</span>
+                  <input
+                    type="range"
+                    min="0.1"
+                    max="1"
+                    step="0.05"
+                    value={layerOpacities.limiteIbge}
+                    onChange={(e) => setLayerOpacities({ ...layerOpacities, limiteIbge: parseFloat(e.target.value) })}
+                    className="w-24 h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#EAB308]"
+                  />
+                  <span className="text-[10px] font-mono font-bold text-[#17211B] w-7 text-right">
+                    {Math.round(layerOpacities.limiteIbge * 100)}%
+                  </span>
+                </div>
+              )}
+            </div>
+
+
+
+            {/* Relevo Hillshade 3D (Copernicus DEM) */}
+            <div className="border-t border-[#DDE4DE] pt-2.5 pb-1 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-[#17211B] flex items-center gap-2.5 text-xs">
+                  <span className="w-5 h-5 rounded-md bg-slate-800/10 flex items-center justify-center text-slate-800">
+                    <Mountain className="w-3.5 h-3.5" />
+                  </span>
+                  <span>Relevo Sombreado 3D (DEM)</span>
+                </span>
+                <input
+                  type="checkbox"
+                  checked={layerVisibility.hillshade}
+                  onChange={(e) => setLayerVisibility({ ...layerVisibility, hillshade: e.target.checked })}
+                  className="rounded text-slate-800 focus:ring-0 cursor-pointer w-4 h-4"
+                />
+              </div>
+              {layerVisibility.hillshade && (
+                <div className="flex items-center justify-between gap-2 pl-7 pr-1">
+                  <span className="text-[10px] text-[#5F6D65]">Opacidade:</span>
+                  <input
+                    type="range"
+                    min="0.1"
+                    max="1"
+                    step="0.05"
+                    value={layerOpacities.hillshade}
+                    onChange={(e) => setLayerOpacities({ ...layerOpacities, hillshade: parseFloat(e.target.value) })}
+                    className="w-24 h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-slate-800"
+                  />
+                  <span className="text-[10px] font-mono font-bold text-[#17211B] w-7 text-right">
+                    {Math.round(layerOpacities.hillshade * 100)}%
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Mapa de Declividade (Slope) */}
+            <div className="border-t border-[#DDE4DE] pt-2.5 pb-1 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-[#17211B] flex items-center gap-2.5 text-xs">
+                  <span className="w-5 h-5 rounded-md bg-orange-500/15 flex items-center justify-center text-orange-600">
+                    <Activity className="w-3.5 h-3.5" />
+                  </span>
+                  <span>Declividade & Risco Erosivo</span>
+                </span>
+                <input
+                  type="checkbox"
+                  checked={layerVisibility.slope}
+                  onChange={(e) => setLayerVisibility({ ...layerVisibility, slope: e.target.checked })}
+                  className="rounded text-orange-500 focus:ring-0 cursor-pointer w-4 h-4"
+                />
+              </div>
+              {layerVisibility.slope && (
+                <div className="flex items-center justify-between gap-2 pl-7 pr-1">
+                  <span className="text-[10px] text-[#5F6D65]">Opacidade:</span>
+                  <input
+                    type="range"
+                    min="0.1"
+                    max="1"
+                    step="0.05"
+                    value={layerOpacities.slope}
+                    onChange={(e) => setLayerOpacities({ ...layerOpacities, slope: parseFloat(e.target.value) })}
+                    className="w-24 h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-orange-500"
+                  />
+                  <span className="text-[10px] font-mono font-bold text-[#17211B] w-7 text-right">
+                    {Math.round(layerOpacities.slope * 100)}%
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Orientação de Encostas (Aspect) */}
+            <div className="border-t border-[#DDE4DE] pt-2.5 pb-1 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-[#17211B] flex items-center gap-2.5 text-xs">
+                  <span className="w-5 h-5 rounded-md bg-purple-500/15 flex items-center justify-center text-purple-600">
+                    <Compass className="w-3.5 h-3.5" />
+                  </span>
+                  <span>Orientação de Encostas (Aspect)</span>
+                </span>
+                <input
+                  type="checkbox"
+                  checked={layerVisibility.aspect}
+                  onChange={(e) => setLayerVisibility({ ...layerVisibility, aspect: e.target.checked })}
+                  className="rounded text-purple-500 focus:ring-0 cursor-pointer w-4 h-4"
+                />
+              </div>
+              {layerVisibility.aspect && (
+                <div className="flex items-center justify-between gap-2 pl-7 pr-1">
+                  <span className="text-[10px] text-[#5F6D65]">Opacidade:</span>
+                  <input
+                    type="range"
+                    min="0.1"
+                    max="1"
+                    step="0.05"
+                    value={layerOpacities.aspect}
+                    onChange={(e) => setLayerOpacities({ ...layerOpacities, aspect: parseFloat(e.target.value) })}
+                    className="w-24 h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                  />
+                  <span className="text-[10px] font-mono font-bold text-[#17211B] w-7 text-right">
+                    {Math.round(layerOpacities.aspect * 100)}%
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Curvas de Nível (50m/100m) */}
+            <div className="border-t border-[#DDE4DE] pt-2.5 pb-1 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-[#17211B] flex items-center gap-2.5 text-xs">
+                  <span className="w-5 h-5 rounded-md bg-amber-800/15 flex items-center justify-center text-amber-800">
+                    <Spline className="w-3.5 h-3.5" />
+                  </span>
+                  <span>Curvas de Nível Altimétricas</span>
+                </span>
+                <input
+                  type="checkbox"
+                  checked={layerVisibility.curvasNivel}
+                  onChange={(e) => setLayerVisibility({ ...layerVisibility, curvasNivel: e.target.checked })}
+                  className="rounded text-[#854D0E] focus:ring-0 cursor-pointer w-4 h-4"
+                />
+              </div>
+              {layerVisibility.curvasNivel && (
+                <div className="flex items-center justify-between gap-2 pl-7 pr-1">
+                  <span className="text-[10px] text-[#5F6D65]">Opacidade:</span>
+                  <input
+                    type="range"
+                    min="0.1"
+                    max="1"
+                    step="0.05"
+                    value={layerOpacities.curvasNivel}
+                    onChange={(e) => setLayerOpacities({ ...layerOpacities, curvasNivel: parseFloat(e.target.value) })}
+                    className="w-24 h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#854D0E]"
+                  />
+                  <span className="text-[10px] font-mono font-bold text-[#17211B] w-7 text-right">
+                    {Math.round(layerOpacities.curvasNivel * 100)}%
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Mapa de Biomassa NDVI (CBERS-4A / INPE) */}
+            <div className="border-t border-[#DDE4DE] pt-2.5 pb-1 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-[#17211B] flex items-center gap-2.5 text-xs">
+                  <span className="w-5 h-5 rounded-md bg-emerald-500/15 flex items-center justify-center text-emerald-600">
+                    <Sprout className="w-3.5 h-3.5" />
+                  </span>
+                  <span>Mapa de Biomassa (NDVI)</span>
+                </span>
+                <input
+                  type="checkbox"
+                  checked={layerVisibility.ndviRaster}
+                  onChange={(e) => setLayerVisibility({ ...layerVisibility, ndviRaster: e.target.checked })}
+                  className="rounded text-emerald-600 focus:ring-0 cursor-pointer w-4 h-4"
+                />
+              </div>
+              {layerVisibility.ndviRaster && (
+                <div className="flex items-center justify-between gap-2 pl-7 pr-1">
+                  <span className="text-[10px] text-[#5F6D65]">Opacidade:</span>
+                  <input
+                    type="range"
+                    min="0.1"
+                    max="1"
+                    step="0.05"
+                    value={layerOpacities.ndviRaster}
+                    onChange={(e) => setLayerOpacities({ ...layerOpacities, ndviRaster: parseFloat(e.target.value) })}
+                    className="w-24 h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-600"
+                  />
+                  <span className="text-[10px] font-mono font-bold text-[#17211B] w-7 text-right">
+                    {Math.round(layerOpacities.ndviRaster * 100)}%
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Mapa de Umidade (NDWI) */}
+            <div className="border-t border-[#DDE4DE] pt-2.5 pb-1 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-[#17211B] flex items-center gap-2.5 text-xs">
+                  <span className="w-5 h-5 rounded-md bg-cyan-500/15 flex items-center justify-center text-cyan-600">
+                    <Droplets className="w-3.5 h-3.5" />
+                  </span>
+                  <span>Índice de Umidade (NDWI)</span>
+                </span>
+                <input
+                  type="checkbox"
+                  checked={layerVisibility.ndwiRaster}
+                  onChange={(e) => setLayerVisibility({ ...layerVisibility, ndwiRaster: e.target.checked })}
+                  className="rounded text-cyan-600 focus:ring-0 cursor-pointer w-4 h-4"
+                />
+              </div>
+              {layerVisibility.ndwiRaster && (
+                <div className="flex items-center justify-between gap-2 pl-7 pr-1">
+                  <span className="text-[10px] text-[#5F6D65]">Opacidade:</span>
+                  <input
+                    type="range"
+                    min="0.1"
+                    max="1"
+                    step="0.05"
+                    value={layerOpacities.ndwiRaster}
+                    onChange={(e) => setLayerOpacities({ ...layerOpacities, ndwiRaster: parseFloat(e.target.value) })}
+                    className="w-24 h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-cyan-600"
+                  />
+                  <span className="text-[10px] font-mono font-bold text-[#17211B] w-7 text-right">
+                    {Math.round(layerOpacities.ndwiRaster * 100)}%
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* ATALHOS DE ENQUADRAMENTO RÁPIDO (MODERNO) */}
+            <div className="border-t-2 border-[#DDE4DE] pt-3 pb-1 space-y-2">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-[#5F6D65] flex items-center gap-1.5">
+                <Focus className="w-3.5 h-3.5 text-[#365314]" />
+                <span>Enquadramento no Mapa</span>
+              </div>
+              <div className="grid grid-cols-3 gap-1.5">
+                <button
+                  onClick={() => {
+                    if (ceurBounds.current) {
+                      map.current?.fitBounds(ceurBounds.current, { padding: 50, duration: 1400 });
+                    } else {
+                      map.current?.flyTo({ center: [-41.53, -10.63], zoom: 12.5, duration: 1400 });
+                    }
+                  }}
+                  className="p-2 bg-white hover:bg-emerald-50 text-[#17211B] rounded-xl text-[10px] font-bold flex flex-col items-center justify-center gap-1 border border-[#DDE4DE] hover:border-emerald-500/40 shadow-sm transition-all cursor-pointer text-center group"
+                  title="Focar no polígono do Parque Eólico CEUR"
+                >
+                  <div className="w-6 h-6 rounded-lg bg-emerald-500/10 group-hover:bg-emerald-500/20 text-emerald-700 flex items-center justify-center transition-colors">
+                    <Target className="w-3.5 h-3.5" />
+                  </div>
+                  <span className="tracking-tight">Parque CEUR</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    map.current?.fitBounds([[-41.591, -10.802], [-40.871, -10.335]], { padding: 40, duration: 1400 });
+                  }}
+                  className="p-2 bg-white hover:bg-amber-50 text-[#17211B] rounded-xl text-[10px] font-bold flex flex-col items-center justify-center gap-1 border border-[#DDE4DE] hover:border-amber-500/40 shadow-sm transition-all cursor-pointer text-center group"
+                  title="Ver o Limite Municipal de Umburanas (IBGE)"
+                >
+                  <div className="w-6 h-6 rounded-lg bg-amber-500/10 group-hover:bg-amber-500/20 text-amber-700 flex items-center justify-center transition-colors">
+                    <Landmark className="w-3.5 h-3.5" />
+                  </div>
+                  <span className="tracking-tight">Município</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    map.current?.fitBounds([[-42.80, -12.00], [-39.50, -9.00]], { padding: 25, duration: 1400 });
+                  }}
+                  className="p-2 bg-white hover:bg-sky-50 text-[#17211B] rounded-xl text-[10px] font-bold flex flex-col items-center justify-center gap-1 border border-[#DDE4DE] hover:border-sky-500/40 shadow-sm transition-all cursor-pointer text-center group"
+                  title="Visão Regional Completa (de Sobradinho a Irecê e Jacobina)"
+                >
+                  <div className="w-6 h-6 rounded-lg bg-sky-500/10 group-hover:bg-sky-500/20 text-sky-700 flex items-center justify-center transition-colors">
+                    <Globe className="w-3.5 h-3.5" />
+                  </div>
+                  <span className="tracking-tight">Extensão Total</span>
+                </button>
+              </div>
+            </div>
+
+            {/* SEÇÃO DE DIAGNÓSTICOS TERRITORIAIS (DESIGN PREMIUM) */}
+            <div className="border-t-2 border-[#DDE4DE] pt-3 pb-1 space-y-2">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-[#5F6D65] flex items-center gap-1.5">
+                <BarChart3 className="w-3.5 h-3.5 text-[#365314]" />
+                <span>Diagnósticos Territoriais (01_GEODADOS)</span>
+              </div>
+              <div className="grid grid-cols-1 gap-2">
+                <button
+                  onClick={() => setShowTerrainModal(true)}
+                  className="w-full text-left p-2.5 bg-white hover:bg-amber-50/60 text-[#17211B] rounded-xl text-xs font-medium flex items-center justify-between border border-[#DDE4DE] hover:border-amber-400/50 shadow-sm transition-all cursor-pointer group"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center shadow-sm flex-shrink-0">
+                      <Mountain className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="font-bold text-[#17211B] leading-tight">Relevo (Copernicus DEM)</div>
+                      <div className="text-[10px] text-[#5F6D65]">Morfologia & Altimetria</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-bold font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-[#00A651] border border-emerald-500/20">
+                      0 - 1.261m
+                    </span>
+                    <ArrowRightIcon className="w-3.5 h-3.5 text-slate-400 group-hover:text-amber-600 transition-colors" />
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => setShowNdviModal(true)}
+                  className="w-full text-left p-2.5 bg-white hover:bg-emerald-50/60 text-[#17211B] rounded-xl text-xs font-medium flex items-center justify-between border border-[#DDE4DE] hover:border-emerald-400/50 shadow-sm transition-all cursor-pointer group"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center shadow-sm flex-shrink-0">
+                      <Sprout className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="font-bold text-[#17211B] leading-tight">NDVI & Biomassa (CBERS)</div>
+                      <div className="text-[10px] text-[#5F6D65]">Vigor Espectral da Caatinga</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-bold font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-[#00A651] border border-emerald-500/20">
+                      33% Vigoroso
+                    </span>
+                    <ArrowRightIcon className="w-3.5 h-3.5 text-slate-400 group-hover:text-emerald-600 transition-colors" />
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => setShowClimateModal(true)}
+                  className="w-full text-left p-2.5 bg-white hover:bg-sky-50/60 text-[#17211B] rounded-xl text-xs font-medium flex items-center justify-between border border-[#DDE4DE] hover:border-sky-400/50 shadow-sm transition-all cursor-pointer group"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-sky-500 to-blue-600 text-white flex items-center justify-center shadow-sm flex-shrink-0">
+                      <CloudRain className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="font-bold text-[#17211B] leading-tight">Clima & Calendário Plantio</div>
+                      <div className="text-[10px] text-[#5F6D65]">Série Pluviométrica & Janelas</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-bold font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-[#00A651] border border-emerald-500/20">
+                      540mm/ano
+                    </span>
+                    <ArrowRightIcon className="w-3.5 h-3.5 text-slate-400 group-hover:text-sky-600 transition-colors" />
+                  </div>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       ) : (
@@ -1428,8 +1995,8 @@ export default function GeoportalMap() {
           title="Reabrir Legenda & Camadas Cartográficas"
         >
           <img src="/symbols/01_geoportal_mapa.png" alt="Legenda" className="w-5 h-5 object-contain brightness-0 invert flex-shrink-0" />
-          <span>Camadas & Legenda</span>
-          <span className="bg-[#00A651] text-white text-[10px] font-mono px-1.5 py-0.5 rounded-full font-bold">7</span>
+          <span>Camadas & Geodados</span>
+          <span className="bg-[#00A651] text-white text-[10px] font-mono px-1.5 py-0.5 rounded-full font-bold">9</span>
         </button>
       )}
 
@@ -1857,6 +2424,214 @@ export default function GeoportalMap() {
           </button>
         </div>
       </div>
+
+      {/* MODAL ANALÍTICO: RELEVO & TOPOGRAFIA (Copernicus DEM 30m) */}
+      {showTerrainModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
+          <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl border border-[#DDE4DE] overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="px-5 py-4 bg-[#17211B] text-white flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <span className="text-xl">🏔️</span>
+                <div>
+                  <h3 className="font-bold text-sm">Modelo Digital de Elevação & Relevo</h3>
+                  <p className="text-[11px] text-gray-300">Copernicus DEM GLO-30 (~30m) • Umburanas, BA</p>
+                </div>
+              </div>
+              <button onClick={() => setShowTerrainModal(false)} className="text-gray-400 hover:text-white cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-5 overflow-y-auto space-y-4 text-xs">
+              <div className="grid grid-cols-3 gap-3">
+                <div className="bg-[#F5F7F4] p-3 rounded-xl border border-[#DDE4DE] text-center">
+                  <span className="text-[10px] uppercase font-bold text-[#5F6D65] block">Altitude Mín.</span>
+                  <span className="text-base font-extrabold text-[#17211B]">{terrainData?.altitude_minima_m?.toFixed(1) || '0.0'} m</span>
+                </div>
+                <div className="bg-[#E8F5E9] p-3 rounded-xl border border-[#A5D6A7] text-center">
+                  <span className="text-[10px] uppercase font-bold text-[#2E7D32] block">Altitude Média</span>
+                  <span className="text-base font-extrabold text-[#1B5E20]">{terrainData?.altitude_media_m?.toFixed(1) || '344.8'} m</span>
+                </div>
+                <div className="bg-[#F5F7F4] p-3 rounded-xl border border-[#DDE4DE] text-center">
+                  <span className="text-[10px] uppercase font-bold text-[#5F6D65] block">Altitude Máx.</span>
+                  <span className="text-base font-extrabold text-[#17211B]">{terrainData?.altitude_maxima_m?.toFixed(1) || '1.261.3'} m</span>
+                </div>
+              </div>
+
+              <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="font-bold text-[#17211B]">Declividade Média do Terreno:</span>
+                  <span className="font-mono font-extrabold text-[#00A651]">{terrainData?.declividade_media_graus?.toFixed(1) || '8.4'}°</span>
+                </div>
+                <p className="text-[#5F6D65] text-[11px] leading-relaxed">
+                  O complexo eólico situa-se em patamares e platôs de topo com declividades suaves a moderadas, cercados por escarpas com inclinações superiores a 25°, onde as intervenções do PRAD exigem leiras e contenções físicas.
+                </p>
+              </div>
+
+              <div className="space-y-1.5">
+                <span className="font-bold text-[#17211B] block">Produtos Gerados e Disponíveis em 01_GEODADOS:</span>
+                <ul className="list-disc pl-4 space-y-1 text-[#5F6D65] text-[11px]">
+                  <li><strong>Hillshade 3D:</strong> Sombreamento para visualização hiper-realista.</li>
+                  <li><strong>Mapa de Declividade (Slope):</strong> Classificação de risco erosivo.</li>
+                  <li><strong>Mapa de Aspecto (Orientação):</strong> Exposição solar das encostas.</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="px-5 py-3 bg-[#F5F7F4] border-t border-[#DDE4DE] flex justify-end">
+              <button
+                onClick={() => setShowTerrainModal(false)}
+                className="px-4 py-2 bg-[#00A651] hover:bg-[#008f45] text-white rounded-xl text-xs font-bold transition-colors cursor-pointer"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL ANALÍTICO: NDVI & BIOMASSA (CBERS / INPE) */}
+      {showNdviModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
+          <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl border border-[#DDE4DE] overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="px-5 py-4 bg-[#17211B] text-white flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <span className="text-xl">🌱</span>
+                <div>
+                  <h3 className="font-bold text-sm">Índice de Vegetação & Biomassa (NDVI)</h3>
+                  <p className="text-[11px] text-gray-300">CBERS-4A WFI • Brazil Data Cube / INPE</p>
+                </div>
+              </div>
+              <button onClick={() => setShowNdviModal(false)} className="text-gray-400 hover:text-white cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-5 overflow-y-auto space-y-4 text-xs">
+              <div className="grid grid-cols-3 gap-3">
+                <div className="bg-[#E8F5E9] p-3 rounded-xl border border-[#A5D6A7] text-center">
+                  <span className="text-[10px] uppercase font-bold text-[#2E7D32] block">Vigor Alto/Médio</span>
+                  <span className="text-base font-extrabold text-[#1B5E20]">{ndviData?.cobertura_vegetal_alta_pct?.toFixed(1) || '33.0'}%</span>
+                </div>
+                <div className="bg-[#FFFDE7] p-3 rounded-xl border border-[#FFF59D] text-center">
+                  <span className="text-[10px] uppercase font-bold text-[#F57F17] block">Vigor Moderado</span>
+                  <span className="text-base font-extrabold text-[#E65100]">{ndviData?.cobertura_vegetal_media_pct?.toFixed(1) || '42.5'}%</span>
+                </div>
+                <div className="bg-[#FFEBEE] p-3 rounded-xl border border-[#FFCDD2] text-center">
+                  <span className="text-[10px] uppercase font-bold text-[#C62828] block">Solo Exposto</span>
+                  <span className="text-base font-extrabold text-[#B71C1C]">{ndviData?.solo_exposto_ou_escasso_pct?.toFixed(1) || '24.5'}%</span>
+                </div>
+              </div>
+
+              <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-1.5">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="font-bold text-[#17211B]">NDVI Médio Geral:</span>
+                  <span className="font-mono font-extrabold text-[#00A651]">{ndviData?.ndvi_medio?.toFixed(2) || '0.21'}</span>
+                </div>
+                <div className="flex justify-between items-center text-[11px] text-[#5F6D65]">
+                  <span>Data da Imagem:</span>
+                  <span className="font-medium text-[#17211B]">{ndviData?.data_coleta || '28/07/2026'}</span>
+                </div>
+                <p className="text-[#5F6D65] text-[11px] leading-relaxed pt-1">
+                  Valores de NDVI em torno de 0.20 a 0.35 refletem a Caatinga Arbustiva Hiperxerófila em período de estiagem. As 38 áreas de PRAD estão sendo monitoradas para acompanhar a elevação do NDVI à medida que o dossel das mudas fecha.
+                </p>
+              </div>
+            </div>
+
+            <div className="px-5 py-3 bg-[#F5F7F4] border-t border-[#DDE4DE] flex justify-end">
+              <button
+                onClick={() => setShowNdviModal(false)}
+                className="px-4 py-2 bg-[#00A651] hover:bg-[#008f45] text-white rounded-xl text-xs font-bold transition-colors cursor-pointer"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL ANALÍTICO: CLIMATOLOGIA & CALENDÁRIO DE PLANTIO */}
+      {showClimateModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
+          <div className="bg-white w-full max-w-xl rounded-2xl shadow-2xl border border-[#DDE4DE] overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="px-5 py-4 bg-[#17211B] text-white flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <span className="text-xl">🌧️</span>
+                <div>
+                  <h3 className="font-bold text-sm">Climatologia & Calendário Agronômico de Plantio</h3>
+                  <p className="text-[11px] text-gray-300">Série Histórica Pluviométrica • Semiárido / Caatinga</p>
+                </div>
+              </div>
+              <button onClick={() => setShowClimateModal(false)} className="text-gray-400 hover:text-white cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-5 overflow-y-auto space-y-4 text-xs">
+              <div className="flex items-center justify-between bg-[#F0FDF4] p-3 rounded-xl border border-[#BBF7D0]">
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-[#166534] block">Precipitação Anual Média</span>
+                  <span className="text-lg font-extrabold text-[#15803D]">540,2 mm / ano</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] uppercase font-bold text-[#166534] block">Temperatura Média</span>
+                  <span className="text-lg font-extrabold text-[#15803D]">24,6 °C</span>
+                </div>
+              </div>
+
+              {/* Gráfico de Barras de Chuva Mensal */}
+              <div className="space-y-1.5">
+                <span className="font-bold text-[#17211B] block">Distribuição Mensal de Chuvas (mm):</span>
+                <div className="grid grid-cols-12 gap-1 items-end h-28 bg-[#F5F7F4] p-2.5 rounded-xl border border-[#DDE4DE]">
+                  {climateData?.meses?.map((m: any, idx: number) => {
+                    const isFavorable = m.chuva_mm >= 50;
+                    const heightPct = Math.min(100, Math.round((m.chuva_mm / 100) * 100));
+                    return (
+                      <div key={idx} className="flex flex-col items-center h-full justify-end group relative">
+                        <div
+                          style={{ height: `${heightPct}%` }}
+                          className={`w-full rounded-t-md transition-all ${isFavorable ? 'bg-[#00A651]' : 'bg-[#F59E0B]/70'}`}
+                          title={`${m.mes}: ${m.chuva_mm}mm (${m.aptidao_plantio})`}
+                        ></div>
+                        <span className="text-[9px] font-bold text-[#5F6D65] mt-1">{m.mes}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="flex items-center justify-between text-[10px] text-[#5F6D65] pt-1">
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded bg-[#00A651] inline-block"></span>
+                    <span>Janela Ideal de Plantio (&gt; 50mm)</span>
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded bg-[#F59E0B] inline-block"></span>
+                    <span>Período de Estiagem / Irrigação</span>
+                  </span>
+                </div>
+              </div>
+
+              {/* Recomendações de Manejo */}
+              <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-1.5">
+                <span className="font-bold text-[#17211B] block">Diretrizes para o PRAD:</span>
+                <ul className="list-disc pl-4 space-y-1 text-[#5F6D65] text-[11px]">
+                  <li><strong>Novembro a Março:</strong> Concentrar mutirões de plantio de mudas e semeadura direta aproveitando as chuvas de verão.</li>
+                  <li><strong>Maio a Setembro:</strong> Foco em coroamento, controle de formigas e irrigação de salvamento nas mudas jovens.</li>
+                  <li><strong>Hidrogel:</strong> Obrigatório no preparo de berços para garantir retenção hídrica em períodos de veranico.</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="px-5 py-3 bg-[#F5F7F4] border-t border-[#DDE4DE] flex justify-end">
+              <button
+                onClick={() => setShowClimateModal(false)}
+                className="px-4 py-2 bg-[#00A651] hover:bg-[#008f45] text-white rounded-xl text-xs font-bold transition-colors cursor-pointer"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* DISCRETE BOTTOM STATUS BAR (Scale, Coords, SRC, Image Date, Source) */}
       <div className="absolute bottom-0 left-20 right-0 h-10 bg-white/95 border-t border-[#DDE4DE] flex items-center justify-between px-4 text-[11px] font-sans text-[#5F6D65] z-30">

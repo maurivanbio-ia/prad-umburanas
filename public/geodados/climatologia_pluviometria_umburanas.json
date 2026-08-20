@@ -1,0 +1,97 @@
+{
+  "estacao": "Umburanas / Chapada Norte - BA",
+  "bioma": "Caatinga",
+  "precipitacao_anual_media_mm": 540.2,
+  "temperatura_media_anual_c": 24.6,
+  "meses": [
+    {
+      "mes": "Jan",
+      "chuva_mm": 68.4,
+      "temp_max_c": 31.2,
+      "temp_min_c": 20.1,
+      "aptidao_plantio": "Favorável (Janela Chuvosa)"
+    },
+    {
+      "mes": "Fev",
+      "chuva_mm": 72.1,
+      "temp_max_c": 31.0,
+      "temp_min_c": 20.3,
+      "aptidao_plantio": "Favorável (Janela Chuvosa)"
+    },
+    {
+      "mes": "Mar",
+      "chuva_mm": 95.8,
+      "temp_max_c": 30.8,
+      "temp_min_c": 20.2,
+      "aptidao_plantio": "Ótima (Pico Chuvoso)"
+    },
+    {
+      "mes": "Abr",
+      "chuva_mm": 52.3,
+      "temp_max_c": 29.9,
+      "temp_min_c": 19.5,
+      "aptidao_plantio": "Moderada"
+    },
+    {
+      "mes": "Mai",
+      "chuva_mm": 18.2,
+      "temp_max_c": 28.5,
+      "temp_min_c": 18.1,
+      "aptidao_plantio": "Estiagem - Irrigação Necessária"
+    },
+    {
+      "mes": "Jun",
+      "chuva_mm": 11.5,
+      "temp_max_c": 27.2,
+      "temp_min_c": 16.8,
+      "aptidao_plantio": "Estiagem Crítica"
+    },
+    {
+      "mes": "Jul",
+      "chuva_mm": 9.2,
+      "temp_max_c": 26.8,
+      "temp_min_c": 15.9,
+      "aptidao_plantio": "Estiagem Crítica"
+    },
+    {
+      "mes": "Ago",
+      "chuva_mm": 7.4,
+      "temp_max_c": 28.1,
+      "temp_min_c": 16.4,
+      "aptidao_plantio": "Estiagem Crítica"
+    },
+    {
+      "mes": "Set",
+      "chuva_mm": 12.0,
+      "temp_max_c": 30.2,
+      "temp_min_c": 18.0,
+      "aptidao_plantio": "Estiagem"
+    },
+    {
+      "mes": "Out",
+      "chuva_mm": 28.5,
+      "temp_max_c": 32.1,
+      "temp_min_c": 19.8,
+      "aptidao_plantio": "Início das Chuvas Esparsas"
+    },
+    {
+      "mes": "Nov",
+      "chuva_mm": 78.6,
+      "temp_max_c": 31.8,
+      "temp_min_c": 20.4,
+      "aptidao_plantio": "Favorável (Início Plantios)"
+    },
+    {
+      "mes": "Dez",
+      "chuva_mm": 86.2,
+      "temp_max_c": 31.4,
+      "temp_min_c": 20.5,
+      "aptidao_plantio": "Favorável (Janela Chuvosa)"
+    }
+  ],
+  "recomendacoes_manejo_prad": [
+    "Concentrar o plantio de mudas e semeadura direta entre Novembro e Março para maximizar o pegamento.",
+    "Nos meses de Maio a Setembro, priorizar manutenção de coroamento, controle de formigas cortadeiras e irrigação de salvamento em áreas críticas.",
+    "Utilizar hidrogel e adubação orgânica nos berços para retenção de umidade no solo raso da Caatinga."
+  ]
+}

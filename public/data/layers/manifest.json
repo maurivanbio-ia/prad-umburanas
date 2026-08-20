@@ -24,6 +24,18 @@
     "geometryType": "Polygon"
   },
   {
+    "id": "hidrografia_drenagem",
+    "filename": "hidrografia_drenagem.geojson",
+    "featureCount": 120,
+    "geometryType": "LineString"
+  },
+  {
+    "id": "limite_ibge",
+    "filename": "limite_ibge.geojson",
+    "featureCount": 1,
+    "geometryType": "Polygon"
+  },
+  {
     "id": "reserva_legal",
     "filename": "reserva_legal.geojson",
     "featureCount": 6,
